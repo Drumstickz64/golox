@@ -1,0 +1,8 @@
+// this is a comment
+(( )){} // grouping stuff
+!*+-/=<> <= == // operators
+"hello, world!" // this is a string
+"this is
+a multiline string"
+
+var hello = "world" + "foo"+"bar"
