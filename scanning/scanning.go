@@ -72,6 +72,8 @@ func (s *Scanner) scanToken() {
 	case '/':
 		if s.match('/') {
 			s.dropLine()
+		} else if s.match('*') {
+			s.ignoreMultilineComment()
 		} else {
 			s.addToken(token.SLASH)
 		}
@@ -222,6 +224,25 @@ func (s *Scanner) dropLine() {
 	for s.peek() != '\n' && !s.isAtEnd() {
 		s.advance()
 	}
+}
+
+func (s *Scanner) ignoreMultilineComment() {
+	for !(s.peek() == '*' && s.peekNext() == '/') && !s.isAtEnd() {
+		if s.peek() == '\n' {
+			s.line++
+		}
+
+		s.advance()
+	}
+
+	if s.isAtEnd() {
+		reporting.Error(s.line, "Unterminated multi-line comment, expected '*/'")
+		return
+	}
+
+	// consume the closing */
+	s.advance() // consume *
+	s.advance() // consume /
 }
 
 func isDigit(char rune) bool {

@@ -13,8 +13,8 @@ func CliError(msg any, exitCode int) {
 	os.Exit(exitCode)
 }
 
-func Error(line int, a any) {
-	report(line, "", a)
+func Error(line int, msg any) {
+	report(line, "", msg)
 }
 
 func report(line int, where string, msg any) {
