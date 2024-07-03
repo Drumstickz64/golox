@@ -96,7 +96,7 @@ func (k Kind) String() string {
 	case ELSE:
 		return "else"
 	case EOF:
-		return "eof"
+		return "EOF"
 	case EQUAL:
 		return "equal"
 	case EQUAL_EQUAL:

@@ -25,7 +25,7 @@ func main() {
 func RunFile(path string) {
 	content, err := os.ReadFile(path)
 	if err != nil {
-		reporting.CliError(err, 1)
+		reporting.CliError(err, 66)
 	}
 
 	Run(string(content))
@@ -46,7 +46,7 @@ func RunPrompt() {
 				break
 			}
 
-			reporting.CliError(err, 1)
+			reporting.CliError(err, 74)
 		}
 
 		line = strings.TrimSpace(line)
