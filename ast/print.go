@@ -6,19 +6,19 @@ import (
 
 type Printer struct{}
 
-func (ap Printer) Print(exp Expr) string {
-	return exp.Accept(ap).(string)
+func (p Printer) Print(exp Expr) string {
+	return exp.Accept(p).(string)
 }
 
-func (ap Printer) VisitBinary(exp *Binary) any {
-	return ap.parenthesize(exp.Operator.Lexeme, exp.Left, exp.Right)
+func (p Printer) VisitBinary(exp *Binary) any {
+	return p.parenthesize(exp.Operator.Lexeme, exp.Left, exp.Right)
 }
 
-func (ap Printer) VisitGrouping(exp *Grouping) any {
-	return ap.parenthesize("group", exp.Expression)
+func (p Printer) VisitGrouping(exp *Grouping) any {
+	return p.parenthesize("group", exp.Expression)
 }
 
-func (ap Printer) VisitLiteral(exp *Literal) any {
+func (p Printer) VisitLiteral(exp *Literal) any {
 	if exp.Value == nil {
 		return "nil"
 	}
@@ -26,15 +26,15 @@ func (ap Printer) VisitLiteral(exp *Literal) any {
 	return fmt.Sprint(exp.Value)
 }
 
-func (ap Printer) VisitUnary(exp *Unary) any {
-	return ap.parenthesize(exp.Operator.Lexeme, exp.Right)
+func (p Printer) VisitUnary(exp *Unary) any {
+	return p.parenthesize(exp.Operator.Lexeme, exp.Right)
 }
 
-func (ap Printer) parenthesize(name string, exps ...Expr) string {
+func (p Printer) parenthesize(name string, exps ...Expr) string {
 	result := "(" + name
 
 	for _, exp := range exps {
-		result += " " + exp.Accept(ap).(string)
+		result += " " + exp.Accept(p).(string)
 	}
 
 	result += ")"
