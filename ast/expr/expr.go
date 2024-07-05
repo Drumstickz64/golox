@@ -1,4 +1,4 @@
-package ast
+package expr
 
 import "github.com/Drumstickz64/golox/token"
 
@@ -14,9 +14,9 @@ type Expr interface {
 }
 
 type Binary struct {
-	Left Expr
+	Left     Expr
 	Operator token.Token
-	Right Expr
+	Right    Expr
 }
 
 func (b *Binary) Accept(visitor ExprVisitor) any {
@@ -41,10 +41,9 @@ func (l *Literal) Accept(visitor ExprVisitor) any {
 
 type Unary struct {
 	Operator token.Token
-	Right Expr
+	Right    Expr
 }
 
 func (u *Unary) Accept(visitor ExprVisitor) any {
 	return visitor.VisitUnary(u)
 }
-
