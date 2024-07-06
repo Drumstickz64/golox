@@ -14,28 +14,51 @@ import (
 	"github.com/Drumstickz64/golox/scanning"
 )
 
+const (
+	SCANNING_TEST_FILEPATH = "scanning_test.lox"
+	PARSING_TEST_FILEPATH  = "parsing_test.lox"
+)
+
 func main() {
 	if len(os.Args) == 1 {
 		RunPrompt()
 	} else if len(os.Args) == 2 {
 		RunFile(os.Args[1])
+	} else if len(os.Args) == 3 {
+		if os.Args[1] == "test" {
+			if os.Args[2] == "scanning" {
+				TestScanning()
+			} else if os.Args[2] == "parsing" {
+				TestParsing()
+			} else {
+				errors.LogCliError("Can currently test: 'scanning', 'parsing'", 64)
+			}
+		} else {
+			errors.LogUsageMessage()
+		}
 	} else {
-		errors.LogCliError("Usage: golox [script]", 64)
+		errors.LogUsageMessage()
 	}
 }
 
 func RunFile(path string) {
-	content, err := os.ReadFile(path)
-	if err != nil {
-		errors.LogCliError(err, 66)
-	}
+	source := LoadSource(path)
 
-	if errs := Run(string(content)); errs != nil {
+	if errs := Run(source); errs != nil {
 		for _, err := range errs {
 			fmt.Fprintln(os.Stderr, err)
 		}
 		os.Exit(65)
 	}
+}
+
+func LoadSource(path string) string {
+	source, err := os.ReadFile(path)
+	if err != nil {
+		errors.LogCliError(err, 66)
+	}
+
+	return string(source)
 }
 
 func RunPrompt() {
@@ -58,28 +81,14 @@ func RunPrompt() {
 			break
 		}
 
-		if err := Run(line); err != nil {
+		errs := Run(line)
+		for _, err := range errs {
 			fmt.Fprintln(os.Stderr, err)
 		}
 	}
 }
 
 func Run(source string) []error {
-	// ========== scanning test ==========
-
-	// scanner := scanning.NewScanner(source)
-	// tokens, errs := scanner.ScanTokens()
-
-	// if len(errs) > 0 {
-	// 	return errs
-	// }
-
-	// for _, tok := range tokens {
-	// 	fmt.Println(tok)
-	// }
-
-	// ========== parsing test ==========
-
 	scanner := scanning.NewScanner(source)
 	tokens, errs := scanner.ScanTokens()
 	parser := parsing.NewParser(tokens)
@@ -95,4 +104,32 @@ func Run(source string) []error {
 	fmt.Println(expr.NewPrinter().Print(expression))
 
 	return nil
+}
+
+func TestScanning() {
+	source := LoadSource(SCANNING_TEST_FILEPATH)
+
+	scanner := scanning.NewScanner(source)
+	tokens, errs := scanner.ScanTokens()
+
+	if len(errs) > 0 {
+		for _, err := range errs {
+			fmt.Fprintln(os.Stderr, err)
+		}
+		os.Exit(65)
+	}
+
+	for _, tok := range tokens {
+		fmt.Println(tok)
+	}
+}
+
+func TestParsing() {
+	source := LoadSource(PARSING_TEST_FILEPATH)
+	if errs := Run(source); len(errs) > 0 {
+		for _, err := range errs {
+			fmt.Fprintln(os.Stderr, err)
+		}
+		os.Exit(65)
+	}
 }
