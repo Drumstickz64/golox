@@ -4,9 +4,14 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/Drumstickz64/golox/reporting"
+	"github.com/Drumstickz64/golox/assert"
+	"github.com/Drumstickz64/golox/errors"
 	"github.com/Drumstickz64/golox/token"
 )
+
+func scanningError(line int, msg any) error {
+	return errors.NewError(line, "", msg)
+}
 
 type Scanner struct {
 	source         string
@@ -22,10 +27,13 @@ func NewScanner(source string) Scanner {
 	}
 }
 
-func (s *Scanner) ScanTokens() []token.Token {
+func (s *Scanner) ScanTokens() ([]token.Token, []error) {
+	errs := []error{}
 	for !s.isAtEnd() {
 		s.start = s.current
-		s.scanToken()
+		if err := s.scanToken(); err != nil {
+			errs = append(errs, err)
+		}
 	}
 
 	s.tokens = append(s.tokens, token.Token{
@@ -35,10 +43,10 @@ func (s *Scanner) ScanTokens() []token.Token {
 		Line:    s.line,
 	})
 
-	return s.tokens
+	return s.tokens, errs
 }
 
-func (s *Scanner) scanToken() {
+func (s *Scanner) scanToken() error {
 	char := s.advance()
 	switch char {
 	case '(':
@@ -73,12 +81,16 @@ func (s *Scanner) scanToken() {
 		if s.match('/') {
 			s.dropLine()
 		} else if s.match('*') {
-			s.ignoreMultilineComment()
+			if err := s.ignoreMultilineComment(); err != nil {
+				return nil
+			}
 		} else {
 			s.addToken(token.SLASH)
 		}
 	case '"':
-		s.addStringToken()
+		if err := s.addStringToken(); err != nil {
+			return err
+		}
 	case ' ', '\t', '\r':
 	case '\n':
 		s.line++
@@ -88,10 +100,11 @@ func (s *Scanner) scanToken() {
 		} else if isAlpha(char) {
 			s.addIdentifierToken()
 		} else {
-			reporting.Error(s.line, fmt.Sprintf("Found unexpected character '%v'", string(char)))
+			return scanningError(s.line, fmt.Sprintf("Found unexpected character '%v'", string(char)))
 		}
 	}
 
+	return nil
 }
 
 func (s *Scanner) advance() rune {
@@ -142,12 +155,13 @@ func (s *Scanner) addLiteralToken(kind token.Kind, literal any) {
 func (s *Scanner) addCompoundToken(completingChar rune, compound, simple token.Kind) {
 	if s.match(completingChar) {
 		s.addToken(compound)
+	} else {
+		s.addToken(simple)
 	}
 
-	s.addToken(simple)
 }
 
-func (s *Scanner) addStringToken() {
+func (s *Scanner) addStringToken() error {
 	for s.peek() != '"' && !s.isAtEnd() {
 		if s.peek() == '\n' {
 			s.line++
@@ -157,8 +171,7 @@ func (s *Scanner) addStringToken() {
 	}
 
 	if s.isAtEnd() {
-		reporting.Error(s.line, "Unterminated string.")
-		return
+		return scanningError(s.line, "Unterminated string.")
 	}
 
 	// consume last "
@@ -167,6 +180,8 @@ func (s *Scanner) addStringToken() {
 	// + 1 and - 1 to trim off the " characters
 	literal := s.source[s.start+1 : s.current-1]
 	s.addLiteralToken(token.STRING, literal)
+
+	return nil
 }
 
 func (s *Scanner) addNumberToken() {
@@ -183,9 +198,7 @@ func (s *Scanner) addNumberToken() {
 
 	lexeme := s.source[s.start:s.current]
 	literal, err := strconv.ParseFloat(lexeme, 64)
-	if err != nil {
-		reporting.ImplementationError(fmt.Sprintf("failed to parse number literal '%v': %v", lexeme, err))
-	}
+	assert.That(err == nil, fmt.Sprintf("'%v' is a valid number literal: %v", lexeme, err))
 	s.addLiteralToken(token.NUMBER, literal)
 }
 
@@ -226,7 +239,7 @@ func (s *Scanner) dropLine() {
 	}
 }
 
-func (s *Scanner) ignoreMultilineComment() {
+func (s *Scanner) ignoreMultilineComment() error {
 	for !(s.peek() == '*' && s.peekNext() == '/') && !s.isAtEnd() {
 		if s.peek() == '\n' {
 			s.line++
@@ -236,13 +249,14 @@ func (s *Scanner) ignoreMultilineComment() {
 	}
 
 	if s.isAtEnd() {
-		reporting.Error(s.line, "Unterminated multi-line comment, expected '*/'")
-		return
+		return scanningError(s.line, "Unterminated multi-line comment, expected '*/'")
 	}
 
 	// consume the closing */
 	s.advance() // consume *
 	s.advance() // consume /
+
+	return nil
 }
 
 func isDigit(char rune) bool {

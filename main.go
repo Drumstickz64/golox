@@ -2,13 +2,15 @@ package main
 
 import (
 	"bufio"
-	"errors"
+	goerrors "errors"
 	"fmt"
 	"io"
 	"os"
 	"strings"
 
-	"github.com/Drumstickz64/golox/reporting"
+	"github.com/Drumstickz64/golox/ast/expr"
+	"github.com/Drumstickz64/golox/errors"
+	"github.com/Drumstickz64/golox/parsing"
 	"github.com/Drumstickz64/golox/scanning"
 )
 
@@ -18,19 +20,20 @@ func main() {
 	} else if len(os.Args) == 2 {
 		RunFile(os.Args[1])
 	} else {
-		reporting.CliError("Usage: golox [script]", 64)
+		errors.LogCliError("Usage: golox [script]", 64)
 	}
 }
 
 func RunFile(path string) {
 	content, err := os.ReadFile(path)
 	if err != nil {
-		reporting.CliError(err, 66)
+		errors.LogCliError(err, 66)
 	}
 
-	Run(string(content))
-
-	if reporting.HadError {
+	if errs := Run(string(content)); errs != nil {
+		for _, err := range errs {
+			fmt.Fprintln(os.Stderr, err)
+		}
 		os.Exit(65)
 	}
 }
@@ -42,11 +45,11 @@ func RunPrompt() {
 		fmt.Print("> ")
 		line, err := reader.ReadString('\n')
 		if err != nil {
-			if errors.Is(err, io.EOF) {
+			if goerrors.Is(err, io.EOF) {
 				break
 			}
 
-			reporting.CliError(err, 74)
+			errors.LogCliError(err, 74)
 		}
 
 		line = strings.TrimSpace(line)
@@ -55,19 +58,41 @@ func RunPrompt() {
 			break
 		}
 
-		Run(line)
-
-		reporting.HadError = false
+		if err := Run(line); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+		}
 	}
 }
 
-func Run(source string) {
-	scanner := scanning.NewScanner(source)
-	tokens := scanner.ScanTokens()
+func Run(source string) []error {
+	// ========== scanning test ==========
 
-	if !reporting.HadError {
-		for _, token := range tokens {
-			fmt.Printf("%v\n", token)
-		}
+	// scanner := scanning.NewScanner(source)
+	// tokens, errs := scanner.ScanTokens()
+
+	// if len(errs) > 0 {
+	// 	return errs
+	// }
+
+	// for _, tok := range tokens {
+	// 	fmt.Println(tok)
+	// }
+
+	// ========== parsing test ==========
+
+	scanner := scanning.NewScanner(source)
+	tokens, errs := scanner.ScanTokens()
+	parser := parsing.NewParser(tokens)
+	expression, err := parser.Parse()
+	if err != nil {
+		errs = append(errs, err)
 	}
+
+	if len(errs) > 0 {
+		return errs
+	}
+
+	fmt.Println(expr.NewPrinter().Print(expression))
+
+	return nil
 }

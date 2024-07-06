@@ -9,7 +9,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/Drumstickz64/golox/reporting"
+	"github.com/Drumstickz64/golox/errors"
 )
 
 func main() {
@@ -27,7 +27,7 @@ func main() {
 	})
 
 	if err != nil {
-		reporting.CliError("error while generating AST: "+err.Error(), 65)
+		errors.LogCliError("error while generating AST: "+err.Error(), 65)
 	}
 }
 

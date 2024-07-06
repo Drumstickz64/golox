@@ -6,6 +6,10 @@ import (
 
 type Printer struct{}
 
+func NewPrinter() Printer {
+	return Printer{}
+}
+
 func (p Printer) Print(exp Expr) string {
 	return exp.Accept(p).(string)
 }
