@@ -168,7 +168,7 @@ func (p *Parser) primary() (expr.Expr, error) {
 			return nil, err
 		}
 
-		_, err = p.consume(token.RIGHT_PAREN, "Expteced ')' after expression")
+		_, err = p.consume(token.RIGHT_PAREN, "Expected ')' after expression")
 		if err != nil {
 			return nil, err
 		}
