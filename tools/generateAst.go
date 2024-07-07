@@ -6,6 +6,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path"
 	"strings"
 
@@ -32,9 +33,10 @@ func main() {
 }
 
 func defineAst(outputDir, baseName string, kinds []string) error {
+	packageName := strings.ToLower(baseName)
 	content := ""
 
-	content += "package ast\n"
+	content += fmt.Sprintf("package %s\n", packageName)
 	content += "\n"
 	content += "import \"github.com/Drumstickz64/golox/token\"\n"
 	content += "\n"
@@ -50,12 +52,12 @@ func defineAst(outputDir, baseName string, kinds []string) error {
 		content += defineType(kind, baseName)
 	}
 
-	pth := path.Join(outputDir, strings.ToLower(baseName)+".go")
+	pth := path.Join(outputDir, packageName+".go")
 	if err := os.WriteFile(pth, []byte(content), 1); err != nil {
 		return err
 	}
 
-	return nil
+	return formatFile(pth)
 }
 
 func defineVisitor(baseName string, kinds []string) string {
@@ -93,4 +95,8 @@ func defineType(kind, baseName string) string {
 	content += "\n"
 
 	return content
+}
+
+func formatFile(pth string) error {
+	return exec.Command("go", "fmt", pth).Run()
 }
