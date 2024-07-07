@@ -171,7 +171,7 @@ func (s *Scanner) addStringToken() error {
 	}
 
 	if s.isAtEnd() {
-		return scanningError(s.line, "Unterminated string.")
+		return scanningError(s.line, "Unterminated string")
 	}
 
 	// consume last "
