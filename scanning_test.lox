@@ -10,3 +10,5 @@ a multiline comment
 you can't nest them so this /* doesn't mean anything */
 
 var foo = (1 + 2) * /* comment in the middle of code */ (3 / 4)
+
+true ? 1 : 2

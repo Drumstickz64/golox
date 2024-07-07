@@ -69,6 +69,10 @@ func (s *Scanner) scanToken() error {
 		s.addToken(token.SEMICOLON)
 	case '*':
 		s.addToken(token.STAR)
+	case '?':
+		s.addToken(token.QUESTION)
+	case ':':
+		s.addToken(token.COLON)
 	case '!':
 		s.addCompoundToken('=', token.BANG_EQUAL, token.BANG)
 	case '=':

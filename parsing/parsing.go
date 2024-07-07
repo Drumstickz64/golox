@@ -31,7 +31,40 @@ func (p *Parser) Parse() (expr.Expr, error) {
 }
 
 func (p *Parser) expression() (expr.Expr, error) {
-	return p.equality()
+	return p.ternary()
+}
+
+func (p *Parser) ternary() (expr.Expr, error) {
+	left, err := p.equality()
+	if err != nil {
+		return nil, err
+	}
+
+	if p.match(token.QUESTION) {
+		middle, err := p.equality()
+		if err != nil {
+			return nil, err
+		}
+
+		if !p.match(token.COLON) {
+			return nil, parsingError(p.previous(), "Expected ':' after middle expression in ternary")
+		}
+
+		right, err := p.ternary()
+		if err != nil {
+			return nil, err
+		}
+
+		exp := &expr.Ternary{
+			Left:   left,
+			Middle: middle,
+			Right:  right,
+		}
+
+		return exp, nil
+	}
+
+	return left, nil
 }
 
 func (p *Parser) equality() (expr.Expr, error) {
@@ -168,7 +201,7 @@ func (p *Parser) primary() (expr.Expr, error) {
 			return nil, err
 		}
 
-		_, err = p.consume(token.RIGHT_PAREN, "Expteced ')' after expression.")
+		_, err = p.consume(token.RIGHT_PAREN, "Expteced ')' after expression")
 		if err != nil {
 			return nil, err
 		}

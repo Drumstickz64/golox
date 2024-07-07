@@ -3,6 +3,7 @@ package expr
 import "github.com/Drumstickz64/golox/token"
 
 type ExprVisitor interface {
+	VisitTernary(exp *Ternary) any
 	VisitBinary(exp *Binary) any
 	VisitGrouping(exp *Grouping) any
 	VisitLiteral(exp *Literal) any
@@ -11,6 +12,16 @@ type ExprVisitor interface {
 
 type Expr interface {
 	Accept(ExprVisitor) any
+}
+
+type Ternary struct {
+	Left   Expr
+	Middle Expr
+	Right  Expr
+}
+
+func (t *Ternary) Accept(visitor ExprVisitor) any {
+	return visitor.VisitTernary(t)
 }
 
 type Binary struct {

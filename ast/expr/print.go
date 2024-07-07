@@ -14,6 +14,10 @@ func (p Printer) Print(exp Expr) string {
 	return exp.Accept(p).(string)
 }
 
+func (p Printer) VisitTernary(exp *Ternary) any {
+	return p.parenthesize("?:", exp.Left, exp.Middle, exp.Right)
+}
+
 func (p Printer) VisitBinary(exp *Binary) any {
 	return p.parenthesize(exp.Operator.Lexeme, exp.Left, exp.Right)
 }

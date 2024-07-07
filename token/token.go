@@ -38,6 +38,8 @@ const (
 	SEMICOLON
 	STAR
 	SLASH
+	QUESTION
+	COLON
 
 	// One or two character tokens.
 	// ! != = == > >= < <=
@@ -159,6 +161,10 @@ func (k Kind) String() string {
 		return "var"
 	case WHILE:
 		return "while"
+	case QUESTION:
+		return "question_mark"
+	case COLON:
+		return "colon"
 	default:
 		panic(fmt.Sprintf("unexpected token.Kind: %#v", k))
 	}
