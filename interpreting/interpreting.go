@@ -5,7 +5,7 @@ import (
 	"reflect"
 
 	"github.com/Drumstickz64/golox/assert"
-	"github.com/Drumstickz64/golox/ast/expr"
+	"github.com/Drumstickz64/golox/ast"
 	"github.com/Drumstickz64/golox/errors"
 	"github.com/Drumstickz64/golox/token"
 )
@@ -16,7 +16,7 @@ func NewInterpreter() Interpreter {
 	return Interpreter{}
 }
 
-func (i *Interpreter) Interpret(exp expr.Expr) error {
+func (i *Interpreter) Interpret(exp ast.Expr) error {
 	value, err := exp.Accept(i)
 	if err != nil {
 		return err
@@ -26,15 +26,15 @@ func (i *Interpreter) Interpret(exp expr.Expr) error {
 	return nil
 }
 
-func (i *Interpreter) VisitLiteral(exp *expr.Literal) (any, error) {
+func (i *Interpreter) VisitLiteralExpr(exp *ast.LiteralExpr) (any, error) {
 	return exp.Value, nil
 }
 
-func (i *Interpreter) VisitGrouping(exp *expr.Grouping) (any, error) {
+func (i *Interpreter) VisitGroupingExpr(exp *ast.GroupingExpr) (any, error) {
 	return exp.Expression.Accept(i)
 }
 
-func (i *Interpreter) VisitUnary(exp *expr.Unary) (any, error) {
+func (i *Interpreter) VisitUnaryExpr(exp *ast.UnaryExpr) (any, error) {
 	right, err := exp.Right.Accept(i)
 	if err != nil {
 		return nil, err
@@ -54,7 +54,7 @@ func (i *Interpreter) VisitUnary(exp *expr.Unary) (any, error) {
 	return assert.Unreachable(fmt.Sprintf("'%v' is a valid unary operator", exp.Operator.Kind)), nil
 }
 
-func (i *Interpreter) VisitBinary(exp *expr.Binary) (any, error) {
+func (i *Interpreter) VisitBinaryExpr(exp *ast.BinaryExpr) (any, error) {
 	left, err := exp.Left.Accept(i)
 	if err != nil {
 		return nil, err

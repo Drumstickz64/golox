@@ -36,7 +36,7 @@ func defineAst(outputDir, baseName string, kinds []string) error {
 	packageName := strings.ToLower(baseName)
 	content := ""
 
-	content += fmt.Sprintf("package %s\n", packageName)
+	content += "package ast\n"
 	content += "\n"
 	content += "import \"github.com/Drumstickz64/golox/token\"\n"
 	content += "\n"
@@ -65,7 +65,8 @@ func defineVisitor(baseName string, kinds []string) string {
 	content += fmt.Sprintf("type %sVisitor interface {\n", baseName)
 	for _, kind := range kinds {
 		kindName := strings.TrimSpace(strings.Split(kind, ":")[0])
-		content += fmt.Sprintf("	Visit%s(exp *%s) (any, error)\n", kindName, kindName)
+		itemName := kindName + baseName
+		content += fmt.Sprintf("	Visit%s(*%s) (any, error)\n", itemName, itemName)
 	}
 	content += "}\n"
 
@@ -77,9 +78,10 @@ func defineVisitor(baseName string, kinds []string) string {
 func defineType(kind, baseName string) string {
 	content := ""
 	kindName := strings.TrimSpace(strings.Split(kind, ":")[0])
+	itemName := kindName + baseName
 	fields := strings.TrimSpace(strings.Split(kind, ":")[1])
 
-	content += fmt.Sprintf("type %s struct {\n", kindName)
+	content += fmt.Sprintf("type %s struct {\n", itemName)
 	for _, field := range strings.Split(fields, ", ") {
 		content += "\t" + field + "\n"
 	}
@@ -88,8 +90,8 @@ func defineType(kind, baseName string) string {
 	content += "\n"
 
 	selfName := strings.ToLower(kindName[0:1])
-	content += fmt.Sprintf("func (%s *%s) Accept(visitor %sVisitor) (any, error) {\n", selfName, kindName, baseName)
-	content += fmt.Sprintf("	return visitor.Visit%s(%s)\n", kindName, selfName)
+	content += fmt.Sprintf("func (%s *%s) Accept(visitor %sVisitor) (any, error) {\n", selfName, itemName, baseName)
+	content += fmt.Sprintf("	return visitor.Visit%s(%s)\n", itemName, selfName)
 	content += "}\n"
 
 	content += "\n"

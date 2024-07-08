@@ -8,7 +8,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/Drumstickz64/golox/ast/expr"
+	"github.com/Drumstickz64/golox/ast"
 	"github.com/Drumstickz64/golox/errors"
 	"github.com/Drumstickz64/golox/interpreting"
 	"github.com/Drumstickz64/golox/parsing"
@@ -102,7 +102,7 @@ PromptLoop:
 	}
 }
 
-func Build(source string) (expr.Expr, []error) {
+func Build(source string) (ast.Expr, []error) {
 	scanner := scanning.NewScanner(source)
 	tokens, errs := scanner.ScanTokens()
 	parser := parsing.NewParser(tokens)
@@ -118,7 +118,7 @@ func Build(source string) (expr.Expr, []error) {
 	return expression, errs
 }
 
-func Run(expression expr.Expr) error {
+func Run(expression ast.Expr) error {
 	interpreter := interpreting.NewInterpreter()
 	return interpreter.Interpret(expression)
 }
@@ -162,5 +162,5 @@ func TestParsing() {
 		os.Exit(65)
 	}
 
-	fmt.Println(expr.NewPrinter().Print(expression))
+	fmt.Println(ast.NewPrinter().Print(expression))
 }

@@ -1,4 +1,4 @@
-package expr
+package ast
 
 import (
 	"fmt"
@@ -15,15 +15,15 @@ func (p Printer) Print(exp Expr) string {
 	return res.(string)
 }
 
-func (p Printer) VisitBinary(exp *Binary) (any, error) {
+func (p Printer) VisitBinaryExpr(exp *BinaryExpr) (any, error) {
 	return p.parenthesize(exp.Operator.Lexeme, exp.Left, exp.Right), nil
 }
 
-func (p Printer) VisitGrouping(exp *Grouping) (any, error) {
+func (p Printer) VisitGroupingExpr(exp *GroupingExpr) (any, error) {
 	return p.parenthesize("group", exp.Expression), nil
 }
 
-func (p Printer) VisitLiteral(exp *Literal) (any, error) {
+func (p Printer) VisitLiteralExpr(exp *LiteralExpr) (any, error) {
 	if exp.Value == nil {
 		return "nil", nil
 	}
@@ -31,7 +31,7 @@ func (p Printer) VisitLiteral(exp *Literal) (any, error) {
 	return fmt.Sprint(exp.Value), nil
 }
 
-func (p Printer) VisitUnary(exp *Unary) (any, error) {
+func (p Printer) VisitUnaryExpr(exp *UnaryExpr) (any, error) {
 	return p.parenthesize(exp.Operator.Lexeme, exp.Right), nil
 }
 

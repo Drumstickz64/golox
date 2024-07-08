@@ -2,7 +2,7 @@ package parsing
 
 import (
 	"github.com/Drumstickz64/golox/assert"
-	"github.com/Drumstickz64/golox/ast/expr"
+	"github.com/Drumstickz64/golox/ast"
 	"github.com/Drumstickz64/golox/errors"
 	"github.com/Drumstickz64/golox/token"
 )
@@ -26,15 +26,15 @@ func NewParser(tokens []token.Token) Parser {
 	}
 }
 
-func (p *Parser) Parse() (expr.Expr, error) {
+func (p *Parser) Parse() (ast.Expr, error) {
 	return p.expression()
 }
 
-func (p *Parser) expression() (expr.Expr, error) {
+func (p *Parser) expression() (ast.Expr, error) {
 	return p.equality()
 }
 
-func (p *Parser) equality() (expr.Expr, error) {
+func (p *Parser) equality() (ast.Expr, error) {
 	exp, err := p.comparison()
 	if err != nil {
 		return nil, err
@@ -47,7 +47,7 @@ func (p *Parser) equality() (expr.Expr, error) {
 			return nil, err
 		}
 
-		exp = &expr.Binary{
+		exp = &ast.BinaryExpr{
 			Left:     exp,
 			Operator: operator,
 			Right:    right,
@@ -57,7 +57,7 @@ func (p *Parser) equality() (expr.Expr, error) {
 	return exp, nil
 }
 
-func (p *Parser) comparison() (expr.Expr, error) {
+func (p *Parser) comparison() (ast.Expr, error) {
 	exp, err := p.term()
 	if err != nil {
 		return nil, err
@@ -70,7 +70,7 @@ func (p *Parser) comparison() (expr.Expr, error) {
 			return nil, err
 		}
 
-		exp = &expr.Binary{
+		exp = &ast.BinaryExpr{
 			Left:     exp,
 			Operator: operator,
 			Right:    right,
@@ -80,7 +80,7 @@ func (p *Parser) comparison() (expr.Expr, error) {
 	return exp, nil
 }
 
-func (p *Parser) term() (expr.Expr, error) {
+func (p *Parser) term() (ast.Expr, error) {
 	exp, err := p.factor()
 	if err != nil {
 		return nil, err
@@ -93,7 +93,7 @@ func (p *Parser) term() (expr.Expr, error) {
 			return nil, err
 		}
 
-		exp = &expr.Binary{
+		exp = &ast.BinaryExpr{
 			Left:     exp,
 			Operator: operator,
 			Right:    right,
@@ -103,7 +103,7 @@ func (p *Parser) term() (expr.Expr, error) {
 	return exp, nil
 }
 
-func (p *Parser) factor() (expr.Expr, error) {
+func (p *Parser) factor() (ast.Expr, error) {
 	exp, err := p.unary()
 	if err != nil {
 		return nil, err
@@ -116,7 +116,7 @@ func (p *Parser) factor() (expr.Expr, error) {
 			return nil, err
 		}
 
-		exp = &expr.Binary{
+		exp = &ast.BinaryExpr{
 			Left:     exp,
 			Operator: operator,
 			Right:    right,
@@ -126,7 +126,7 @@ func (p *Parser) factor() (expr.Expr, error) {
 	return exp, nil
 }
 
-func (p *Parser) unary() (expr.Expr, error) {
+func (p *Parser) unary() (ast.Expr, error) {
 	if p.match(token.MINUS, token.BANG) {
 		operator := p.previous()
 		right, err := p.unary()
@@ -134,7 +134,7 @@ func (p *Parser) unary() (expr.Expr, error) {
 			return nil, err
 		}
 
-		exp := &expr.Unary{
+		exp := &ast.UnaryExpr{
 			Operator: operator,
 			Right:    right,
 		}
@@ -145,21 +145,21 @@ func (p *Parser) unary() (expr.Expr, error) {
 	return p.primary()
 }
 
-func (p *Parser) primary() (expr.Expr, error) {
+func (p *Parser) primary() (ast.Expr, error) {
 	if p.match(token.TRUE) {
-		return &expr.Literal{Value: true}, nil
+		return &ast.LiteralExpr{Value: true}, nil
 	}
 
 	if p.match(token.FALSE) {
-		return &expr.Literal{Value: false}, nil
+		return &ast.LiteralExpr{Value: false}, nil
 	}
 
 	if p.match(token.NIL) {
-		return &expr.Literal{Value: nil}, nil
+		return &ast.LiteralExpr{Value: nil}, nil
 	}
 
 	if p.match(token.STRING, token.NUMBER) {
-		return &expr.Literal{Value: p.previous().Literal}, nil
+		return &ast.LiteralExpr{Value: p.previous().Literal}, nil
 	}
 
 	if p.match(token.LEFT_PAREN) {
@@ -173,7 +173,7 @@ func (p *Parser) primary() (expr.Expr, error) {
 			return nil, err
 		}
 
-		return &expr.Grouping{Expression: exp}, nil
+		return &ast.GroupingExpr{Expression: exp}, nil
 	}
 
 	return nil, parsingError(p.peek(), "Failed to parse expression")
