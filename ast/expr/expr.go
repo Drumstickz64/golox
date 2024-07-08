@@ -3,14 +3,14 @@ package expr
 import "github.com/Drumstickz64/golox/token"
 
 type ExprVisitor interface {
-	VisitBinary(exp *Binary) any
-	VisitGrouping(exp *Grouping) any
-	VisitLiteral(exp *Literal) any
-	VisitUnary(exp *Unary) any
+	VisitBinary(exp *Binary) (any, error)
+	VisitGrouping(exp *Grouping) (any, error)
+	VisitLiteral(exp *Literal) (any, error)
+	VisitUnary(exp *Unary) (any, error)
 }
 
 type Expr interface {
-	Accept(ExprVisitor) any
+	Accept(ExprVisitor) (any, error)
 }
 
 type Binary struct {
@@ -19,7 +19,7 @@ type Binary struct {
 	Right    Expr
 }
 
-func (b *Binary) Accept(visitor ExprVisitor) any {
+func (b *Binary) Accept(visitor ExprVisitor) (any, error) {
 	return visitor.VisitBinary(b)
 }
 
@@ -27,7 +27,7 @@ type Grouping struct {
 	Expression Expr
 }
 
-func (g *Grouping) Accept(visitor ExprVisitor) any {
+func (g *Grouping) Accept(visitor ExprVisitor) (any, error) {
 	return visitor.VisitGrouping(g)
 }
 
@@ -35,7 +35,7 @@ type Literal struct {
 	Value any
 }
 
-func (l *Literal) Accept(visitor ExprVisitor) any {
+func (l *Literal) Accept(visitor ExprVisitor) (any, error) {
 	return visitor.VisitLiteral(l)
 }
 
@@ -44,6 +44,6 @@ type Unary struct {
 	Right    Expr
 }
 
-func (u *Unary) Accept(visitor ExprVisitor) any {
+func (u *Unary) Accept(visitor ExprVisitor) (any, error) {
 	return visitor.VisitUnary(u)
 }

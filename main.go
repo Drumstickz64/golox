@@ -10,6 +10,7 @@ import (
 
 	"github.com/Drumstickz64/golox/ast/expr"
 	"github.com/Drumstickz64/golox/errors"
+	"github.com/Drumstickz64/golox/interpreting"
 	"github.com/Drumstickz64/golox/parsing"
 	"github.com/Drumstickz64/golox/scanning"
 )
@@ -44,11 +45,18 @@ func main() {
 func RunFile(path string) {
 	source := LoadSource(path)
 
-	if errs := Run(source); errs != nil {
-		for _, err := range errs {
-			fmt.Fprintln(os.Stderr, err)
-		}
+	expression, errs := Build(source)
+	for _, err := range errs {
+		fmt.Fprintln(os.Stderr, err)
+	}
+
+	if len(errs) > 0 {
 		os.Exit(65)
+	}
+
+	if err := Run(expression); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(70)
 	}
 }
 
@@ -64,6 +72,7 @@ func LoadSource(path string) string {
 func RunPrompt() {
 	reader := bufio.NewReader(os.Stdin)
 
+PromptLoop:
 	for {
 		fmt.Print("> ")
 		line, err := reader.ReadString('\n')
@@ -81,14 +90,19 @@ func RunPrompt() {
 			break
 		}
 
-		errs := Run(line)
+		expression, errs := Build(line)
 		for _, err := range errs {
+			fmt.Fprintln(os.Stderr, err)
+			continue PromptLoop
+		}
+
+		if err := Run(expression); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 		}
 	}
 }
 
-func Run(source string) []error {
+func Build(source string) (expr.Expr, []error) {
 	scanner := scanning.NewScanner(source)
 	tokens, errs := scanner.ScanTokens()
 	parser := parsing.NewParser(tokens)
@@ -98,12 +112,15 @@ func Run(source string) []error {
 	}
 
 	if len(errs) > 0 {
-		return errs
+		return nil, errs
 	}
 
-	fmt.Println(expr.NewPrinter().Print(expression))
+	return expression, errs
+}
 
-	return nil
+func Run(expression expr.Expr) error {
+	interpreter := interpreting.NewInterpreter()
+	return interpreter.Interpret(expression)
 }
 
 func TestScanning() {
@@ -112,10 +129,11 @@ func TestScanning() {
 	scanner := scanning.NewScanner(source)
 	tokens, errs := scanner.ScanTokens()
 
+	for _, err := range errs {
+		fmt.Fprintln(os.Stderr, err)
+	}
+
 	if len(errs) > 0 {
-		for _, err := range errs {
-			fmt.Fprintln(os.Stderr, err)
-		}
 		os.Exit(65)
 	}
 
@@ -126,10 +144,23 @@ func TestScanning() {
 
 func TestParsing() {
 	source := LoadSource(PARSING_TEST_FILEPATH)
-	if errs := Run(source); len(errs) > 0 {
-		for _, err := range errs {
-			fmt.Fprintln(os.Stderr, err)
-		}
+
+	scanner := scanning.NewScanner(source)
+	tokens, errs := scanner.ScanTokens()
+	for _, err := range errs {
+		fmt.Fprintln(os.Stderr, err)
+	}
+
+	if len(errs) > 0 {
 		os.Exit(65)
 	}
+
+	parser := parsing.NewParser(tokens)
+	expression, err := parser.Parse()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(65)
+	}
+
+	fmt.Println(expr.NewPrinter().Print(expression))
 }

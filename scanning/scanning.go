@@ -10,7 +10,7 @@ import (
 )
 
 func scanningError(line int, msg any) error {
-	return errors.NewError(line, "", msg)
+	return errors.NewBuildtimeError(line, "", msg)
 }
 
 type Scanner struct {

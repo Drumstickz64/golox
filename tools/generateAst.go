@@ -44,7 +44,7 @@ func defineAst(outputDir, baseName string, kinds []string) error {
 	content += defineVisitor(baseName, kinds)
 
 	content += fmt.Sprintf("type %s interface {\n", baseName)
-	content += fmt.Sprintf("	Accept(%sVisitor) any\n", baseName)
+	content += fmt.Sprintf("	Accept(%sVisitor) (any, error)\n", baseName)
 	content += "}\n"
 	content += "\n"
 
@@ -53,7 +53,7 @@ func defineAst(outputDir, baseName string, kinds []string) error {
 	}
 
 	pth := path.Join(outputDir, packageName+".go")
-	if err := os.WriteFile(pth, []byte(content), 1); err != nil {
+	if err := os.WriteFile(pth, []byte(content), 0777); err != nil {
 		return err
 	}
 
@@ -65,7 +65,7 @@ func defineVisitor(baseName string, kinds []string) string {
 	content += fmt.Sprintf("type %sVisitor interface {\n", baseName)
 	for _, kind := range kinds {
 		kindName := strings.TrimSpace(strings.Split(kind, ":")[0])
-		content += fmt.Sprintf("	Visit%s(exp *%s) any\n", kindName, kindName)
+		content += fmt.Sprintf("	Visit%s(exp *%s) (any, error)\n", kindName, kindName)
 	}
 	content += "}\n"
 
@@ -88,7 +88,7 @@ func defineType(kind, baseName string) string {
 	content += "\n"
 
 	selfName := strings.ToLower(kindName[0:1])
-	content += fmt.Sprintf("func (%s *%s) Accept(visitor %sVisitor) any {\n", selfName, kindName, baseName)
+	content += fmt.Sprintf("func (%s *%s) Accept(visitor %sVisitor) (any, error) {\n", selfName, kindName, baseName)
 	content += fmt.Sprintf("	return visitor.Visit%s(%s)\n", kindName, selfName)
 	content += "}\n"
 
