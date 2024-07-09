@@ -67,15 +67,20 @@ func (i *Interpreter) VisitBinaryExpr(exp *ast.BinaryExpr) (any, error) {
 
 	switch exp.Operator.Kind {
 	case token.PLUS:
-		if reflect.TypeOf(left).Kind() == reflect.Float64 && reflect.TypeOf(right).Kind() == reflect.Float64 {
+		// is* functions are needed becuase calling reflect.TypeOf on a nil causes a panic
+		if isNumber(left) && isNumber(right) {
 			return left.(float64) + right.(float64), nil
 		}
 
-		if reflect.TypeOf(left).Kind() == reflect.String && reflect.TypeOf(right).Kind() == reflect.String {
+		if isString(left) && isString(right) {
 			return left.(string) + right.(string), nil
+		} else if isString(left) {
+			return left.(string) + stringify(right), nil
+		} else if isString(right) {
+			return stringify(left) + right.(string), nil
 		}
 
-		return errors.NewRuntimeError(exp.Operator, "operands must be two numbers or two strings"), nil
+		return errors.NewRuntimeError(exp.Operator, "operands must be two numbers or one of them must be a string"), nil
 	case token.MINUS:
 		if err := checkNumberOperandBinary(exp.Operator, left, right); err != nil {
 			return nil, err
@@ -164,4 +169,20 @@ func stringify(item any) string {
 	}
 
 	return fmt.Sprint(item)
+}
+
+func isNumber(value any) bool {
+	if value == nil {
+		return false
+	}
+
+	return reflect.TypeOf(value).Kind() == reflect.Float64
+}
+
+func isString(value any) bool {
+	if value == nil {
+		return false
+	}
+
+	return reflect.TypeOf(value).Kind() == reflect.String
 }
