@@ -91,6 +91,9 @@ func (i *Interpreter) VisitBinaryExpr(exp *ast.BinaryExpr) (any, error) {
 		if err := checkNumberOperandBinary(exp.Operator, left, right); err != nil {
 			return nil, err
 		}
+		if right.(float64) == 0.0 {
+			return nil, errors.NewRuntimeError(exp.Operator, "attempted to divide by zero")
+		}
 		return left.(float64) / right.(float64), nil
 	case token.GREATER:
 		if err := checkNumberOperandBinary(exp.Operator, left, right); err != nil {
