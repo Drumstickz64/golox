@@ -165,12 +165,12 @@ func (k Kind) String() string {
 }
 
 type Token struct {
-	Kind    Kind
-	Lexeme  string
-	Literal any
-	Line    int
+	Kind         Kind
+	Lexeme       string
+	Literal      any
+	Line, Column int
 }
 
 func (t Token) String() string {
-	return fmt.Sprintf("token of kind '%v' scanned from '%s' with literal '%v'", t.Kind, t.Lexeme, t.Literal)
+	return fmt.Sprintf("[on %d:%d] token of kind '%v' scanned from '%s' with literal '%v'", t.Line, t.Column, t.Kind, t.Lexeme, t.Literal)
 }

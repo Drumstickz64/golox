@@ -16,10 +16,10 @@ func LogUsageMessage() {
 	LogCliError("Usage: golox [script] | golox test <operation>", 64)
 }
 
-func NewBuildtimeError(line int, where string, msg any) error {
-	return fmt.Errorf("[line %d] Error%v: %v", line, where, msg)
+func NewBuildtimeError(line, column int, where string, msg any) error {
+	return fmt.Errorf("[on %d:%d] Error%v: %v", line, column, where, msg)
 }
 
 func NewRuntimeError(tok token.Token, msg any) error {
-	return fmt.Errorf("%v\n[line  %d]", msg, tok.Line)
+	return fmt.Errorf("encountered a runtime error: %v\n[on %d:%d]", msg, tok.Line, tok.Column)
 }

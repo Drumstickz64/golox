@@ -9,10 +9,10 @@ import (
 
 func parsingError(tok token.Token, msg any) error {
 	if tok.Kind == token.EOF {
-		return errors.NewBuildtimeError(tok.Line, " at end", msg)
+		return errors.NewBuildtimeError(tok.Line, tok.Column, " at end", msg)
 	}
 
-	return errors.NewBuildtimeError(tok.Line, " at '"+tok.Lexeme+"'", msg)
+	return errors.NewBuildtimeError(tok.Line, tok.Column, " at '"+tok.Lexeme+"'", msg)
 }
 
 type Parser struct {

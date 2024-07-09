@@ -9,15 +9,15 @@ import (
 	"github.com/Drumstickz64/golox/token"
 )
 
-func scanningError(line int, msg any) error {
-	return errors.NewBuildtimeError(line, "", msg)
+func scanningError(line, column int, msg any) error {
+	return errors.NewBuildtimeError(line, column, "", msg)
 }
 
 type Scanner struct {
-	source         string
-	tokens         []token.Token
-	start, current int
-	line           int
+	source          string
+	tokens          []token.Token
+	start, current  int
+	line, lineStart int
 }
 
 func NewScanner(source string) Scanner {
@@ -41,6 +41,7 @@ func (s *Scanner) ScanTokens() ([]token.Token, []error) {
 		Lexeme:  "",
 		Literal: nil,
 		Line:    s.line,
+		Column:  s.currentColumn() + 1,
 	})
 
 	return s.tokens, errs
@@ -94,13 +95,14 @@ func (s *Scanner) scanToken() error {
 	case ' ', '\t', '\r':
 	case '\n':
 		s.line++
+		s.lineStart = s.current
 	default:
 		if isDigit(char) {
 			s.addNumberToken()
 		} else if isAlpha(char) {
 			s.addIdentifierToken()
 		} else {
-			return scanningError(s.line, fmt.Sprintf("Found unexpected character '%v'", string(char)))
+			return scanningError(s.line, s.currentColumn(), fmt.Sprintf("Found unexpected character '%v'", string(char)))
 		}
 	}
 
@@ -140,6 +142,7 @@ func (s *Scanner) addLiteralToken(kind token.Kind, literal any) {
 		Lexeme:  s.source[s.start:s.current],
 		Literal: literal,
 		Line:    s.line,
+		Column:  s.currentColumn(),
 	})
 }
 
@@ -165,13 +168,14 @@ func (s *Scanner) addStringToken() error {
 	for s.peek() != '"' && !s.isAtEnd() {
 		if s.peek() == '\n' {
 			s.line++
+			s.lineStart = s.current + 1
 		}
 
 		s.advance()
 	}
 
 	if s.isAtEnd() {
-		return scanningError(s.line, "Unterminated string")
+		return scanningError(s.line, s.currentColumn(), "Unterminated string")
 	}
 
 	// consume last "
@@ -243,13 +247,14 @@ func (s *Scanner) ignoreMultilineComment() error {
 	for !(s.peek() == '*' && s.peekNext() == '/') && !s.isAtEnd() {
 		if s.peek() == '\n' {
 			s.line++
+			s.lineStart = s.current + 1
 		}
 
 		s.advance()
 	}
 
 	if s.isAtEnd() {
-		return scanningError(s.line, "Unterminated multi-line comment, expected '*/'")
+		return scanningError(s.line, s.currentColumn(), "Unterminated multi-line comment, expected '*/'")
 	}
 
 	// consume the closing */
@@ -257,6 +262,12 @@ func (s *Scanner) ignoreMultilineComment() error {
 	s.advance() // consume /
 
 	return nil
+}
+
+func (s *Scanner) currentColumn() int {
+	// columns start at 1, where indeces start at zero. However,
+	// we only add the token after moving past it, so +1 is not needed
+	return s.current - s.lineStart
 }
 
 func isDigit(char rune) bool {
