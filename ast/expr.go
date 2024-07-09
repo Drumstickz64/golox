@@ -1,6 +1,8 @@
 package ast
 
-import "github.com/Drumstickz64/golox/token"
+import (
+	"github.com/Drumstickz64/golox/token"
+)
 
 type ExprVisitor interface {
 	VisitBinaryExpr(*BinaryExpr) (any, error)

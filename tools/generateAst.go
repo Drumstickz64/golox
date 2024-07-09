@@ -25,20 +25,33 @@ func main() {
 		"Grouping : Expression Expr",
 		"Literal  : Value any",
 		"Unary    : Operator token.Token, Right Expr",
+	}, []string{
+		"github.com/Drumstickz64/golox/token",
 	})
 
 	if err != nil {
-		errors.LogCliError("error while generating AST: "+err.Error(), 65)
+		errors.LogCliError("error while generating expr AST: "+err.Error(), 65)
+	}
+
+	err = defineAst(outputDir, "Stmt", []string{
+		"Expression : Expression Expr",
+		"Print      : Expression Expr",
+	}, []string{})
+
+	if err != nil {
+		errors.LogCliError("error while generating expr AST: "+err.Error(), 65)
 	}
 }
 
-func defineAst(outputDir, baseName string, kinds []string) error {
+func defineAst(outputDir, baseName string, kinds []string, imports []string) error {
 	packageName := strings.ToLower(baseName)
 	content := ""
 
 	content += "package ast\n"
 	content += "\n"
-	content += "import \"github.com/Drumstickz64/golox/token\"\n"
+
+	content += defineImports(imports)
+
 	content += "\n"
 
 	content += defineVisitor(baseName, kinds)
@@ -95,6 +108,22 @@ func defineType(kind, baseName string) string {
 	content += "}\n"
 
 	content += "\n"
+
+	return content
+}
+
+func defineImports(imports []string) string {
+	if len(imports) == 0 {
+		return ""
+	}
+
+	content := ""
+
+	content += "import (\n"
+	for _, imprt := range imports {
+		content += fmt.Sprintf("\"%s\"\n", imprt)
+	}
+	content += ")\n"
 
 	return content
 }
