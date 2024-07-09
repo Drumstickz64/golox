@@ -6,43 +6,48 @@ import (
 
 	"github.com/Drumstickz64/golox/assert"
 	"github.com/Drumstickz64/golox/ast"
+	"github.com/Drumstickz64/golox/environment"
 	"github.com/Drumstickz64/golox/errors"
 	"github.com/Drumstickz64/golox/token"
 )
 
-type Interpreter struct{}
-
-func NewInterpreter() Interpreter {
-	return Interpreter{}
+type Interpreter struct {
+	env environment.Environment
 }
 
-func (i *Interpreter) Interpret(exp ast.Expr) error {
-	value, err := exp.Accept(i)
-	if err != nil {
-		return err
+func NewInterpreter() Interpreter {
+	return Interpreter{
+		env: environment.New(),
+	}
+}
+
+func (i *Interpreter) Interpret(statements []ast.Stmt) error {
+	for _, statement := range statements {
+		if err := i.execute(statement); err != nil {
+			return err
+		}
 	}
 
-	fmt.Println(stringify(value))
 	return nil
 }
 
-func (i *Interpreter) VisitLiteralExpr(exp *ast.LiteralExpr) (any, error) {
-	return exp.Value, nil
+func (i *Interpreter) VisitLiteralExpr(expr *ast.LiteralExpr) (any, error) {
+	return expr.Value, nil
 }
 
-func (i *Interpreter) VisitGroupingExpr(exp *ast.GroupingExpr) (any, error) {
-	return exp.Expression.Accept(i)
+func (i *Interpreter) VisitGroupingExpr(expr *ast.GroupingExpr) (any, error) {
+	return i.evaluate(expr.Expression)
 }
 
-func (i *Interpreter) VisitUnaryExpr(exp *ast.UnaryExpr) (any, error) {
-	right, err := exp.Right.Accept(i)
+func (i *Interpreter) VisitUnaryExpr(expr *ast.UnaryExpr) (any, error) {
+	right, err := i.evaluate(expr.Right)
 	if err != nil {
 		return nil, err
 	}
 
-	switch exp.Operator.Kind {
+	switch expr.Operator.Kind {
 	case token.MINUS:
-		if err := checkNumberOperandUnary(exp.Operator, right); err != nil {
+		if err := checkNumberOperandUnary(expr.Operator, right); err != nil {
 			return nil, err
 		}
 
@@ -51,21 +56,21 @@ func (i *Interpreter) VisitUnaryExpr(exp *ast.UnaryExpr) (any, error) {
 		return !isTruthy(right), nil
 	}
 
-	return assert.Unreachable(fmt.Sprintf("'%v' is a valid unary operator", exp.Operator.Kind)), nil
+	return assert.Unreachable(fmt.Sprintf("'%v' is a valid unary operator", expr.Operator.Kind)), nil
 }
 
-func (i *Interpreter) VisitBinaryExpr(exp *ast.BinaryExpr) (any, error) {
-	left, err := exp.Left.Accept(i)
+func (i *Interpreter) VisitBinaryExpr(expr *ast.BinaryExpr) (any, error) {
+	left, err := i.evaluate(expr.Left)
 	if err != nil {
 		return nil, err
 	}
 
-	right, err := exp.Right.Accept(i)
+	right, err := i.evaluate(expr.Right)
 	if err != nil {
 		return nil, err
 	}
 
-	switch exp.Operator.Kind {
+	switch expr.Operator.Kind {
 	case token.PLUS:
 		// is* functions are needed becuase calling reflect.TypeOf on a nil causes a panic
 		if isNumber(left) && isNumber(right) {
@@ -76,58 +81,93 @@ func (i *Interpreter) VisitBinaryExpr(exp *ast.BinaryExpr) (any, error) {
 			return left.(string) + right.(string), nil
 		}
 
-		return errors.NewRuntimeError(exp.Operator, "operands must be two numbers or two strings"), nil
+		return errors.NewRuntimeError(expr.Operator, "operands must be two numbers or two strings"), nil
 	case token.MINUS:
-		if err := checkNumberOperandBinary(exp.Operator, left, right); err != nil {
+		if err := checkNumberOperandBinary(expr.Operator, left, right); err != nil {
 			return nil, err
 		}
 		return left.(float64) - right.(float64), nil
 	case token.STAR:
-		if err := checkNumberOperandBinary(exp.Operator, left, right); err != nil {
+		if err := checkNumberOperandBinary(expr.Operator, left, right); err != nil {
 			return nil, err
 		}
 		return left.(float64) * right.(float64), nil
 	case token.SLASH:
-		if err := checkNumberOperandBinary(exp.Operator, left, right); err != nil {
+		if err := checkNumberOperandBinary(expr.Operator, left, right); err != nil {
 			return nil, err
 		}
 		if right.(float64) == 0.0 {
-			return nil, errors.NewRuntimeError(exp.Operator, "attempted to divide by zero")
+			return nil, errors.NewRuntimeError(expr.Operator, "attempted to divide by zero")
 		}
 		return left.(float64) / right.(float64), nil
 	case token.GREATER:
-		if err := checkNumberOperandBinary(exp.Operator, left, right); err != nil {
+		if err := checkNumberOperandBinary(expr.Operator, left, right); err != nil {
 			return nil, err
 		}
 		return left.(float64) > right.(float64), nil
 	case token.GREATER_EQUAL:
-		if err := checkNumberOperandBinary(exp.Operator, left, right); err != nil {
+		if err := checkNumberOperandBinary(expr.Operator, left, right); err != nil {
 			return nil, err
 		}
 		return left.(float64) >= right.(float64), nil
 	case token.LESS:
-		if err := checkNumberOperandBinary(exp.Operator, left, right); err != nil {
+		if err := checkNumberOperandBinary(expr.Operator, left, right); err != nil {
 			return nil, err
 		}
 		return left.(float64) < right.(float64), nil
 	case token.LESS_EQUAL:
-		if err := checkNumberOperandBinary(exp.Operator, left, right); err != nil {
+		if err := checkNumberOperandBinary(expr.Operator, left, right); err != nil {
 			return nil, err
 		}
 		return left.(float64) <= right.(float64), nil
 	case token.EQUAL_EQUAL:
-		if err := checkNumberOperandBinary(exp.Operator, left, right); err != nil {
+		if err := checkNumberOperandBinary(expr.Operator, left, right); err != nil {
 			return nil, err
 		}
 		return left == right, nil
 	case token.BANG_EQUAL:
-		if err := checkNumberOperandBinary(exp.Operator, left, right); err != nil {
+		if err := checkNumberOperandBinary(expr.Operator, left, right); err != nil {
 			return nil, err
 		}
 		return left != right, nil
 	}
 
-	return assert.Unreachable(fmt.Sprintf("'%v' is a valid binary operator", exp.Operator.Kind)), nil
+	return assert.Unreachable(fmt.Sprintf("'%v' is a valid binary operator", expr.Operator.Kind)), nil
+}
+
+func (i *Interpreter) VisitVariableExpr(expr *ast.VariableExpr) (any, error) {
+	return i.env.Get(expr.Name)
+}
+
+func (i *Interpreter) VisitPrintStmt(stmt *ast.PrintStmt) (any, error) {
+	value, err := i.evaluate(stmt.Expression)
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Println(stringify(value))
+
+	return nil, nil
+}
+
+func (i *Interpreter) VisitExpressionStmt(stmt *ast.ExpressionStmt) (any, error) {
+	_, err := i.evaluate(stmt.Expression)
+	return nil, err
+}
+
+func (i *Interpreter) VisitVarStmt(stmt *ast.VarStmt) (any, error) {
+	var value any = nil
+
+	if stmt.Initializer != nil {
+		var err error
+		value, err = i.evaluate(stmt.Initializer)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	i.env.Define(stmt.Name.Lexeme, value)
+	return nil, nil
 }
 
 func checkNumberOperandUnary(operator token.Token, operand any) error {
@@ -147,7 +187,15 @@ func checkNumberOperandBinary(operator token.Token, left, right any) error {
 	}
 
 	return errors.NewRuntimeError(operator, "operand must be a number")
+}
 
+func (i *Interpreter) execute(stmt ast.Stmt) error {
+	_, err := stmt.Accept(i)
+	return err
+}
+
+func (i *Interpreter) evaluate(expr ast.Expr) (any, error) {
+	return expr.Accept(i)
 }
 
 func isTruthy(item any) bool {

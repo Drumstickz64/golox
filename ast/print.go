@@ -10,36 +10,44 @@ func NewPrinter() Printer {
 	return Printer{}
 }
 
-func (p Printer) Print(exp Expr) string {
-	res, _ := exp.Accept(p)
-	return res.(string)
+func (p Printer) Print(expr Expr) (string, error) {
+	res, err := expr.Accept(p)
+	if err != nil {
+		return "", err
+	}
+
+	return res.(string), err
 }
 
-func (p Printer) VisitBinaryExpr(exp *BinaryExpr) (any, error) {
-	return p.parenthesize(exp.Operator.Lexeme, exp.Left, exp.Right), nil
+func (p Printer) VisitBinaryExpr(expr *BinaryExpr) (any, error) {
+	return p.parenthesize(expr.Operator.Lexeme, expr.Left, expr.Right), nil
 }
 
-func (p Printer) VisitGroupingExpr(exp *GroupingExpr) (any, error) {
-	return p.parenthesize("group", exp.Expression), nil
+func (p Printer) VisitGroupingExpr(expr *GroupingExpr) (any, error) {
+	return p.parenthesize("group", expr.Expression), nil
 }
 
-func (p Printer) VisitLiteralExpr(exp *LiteralExpr) (any, error) {
-	if exp.Value == nil {
+func (p Printer) VisitLiteralExpr(expr *LiteralExpr) (any, error) {
+	if expr.Value == nil {
 		return "nil", nil
 	}
 
-	return fmt.Sprint(exp.Value), nil
+	return fmt.Sprint(expr.Value), nil
 }
 
-func (p Printer) VisitUnaryExpr(exp *UnaryExpr) (any, error) {
-	return p.parenthesize(exp.Operator.Lexeme, exp.Right), nil
+func (p Printer) VisitUnaryExpr(expr *UnaryExpr) (any, error) {
+	return p.parenthesize(expr.Operator.Lexeme, expr.Right), nil
 }
 
-func (p Printer) parenthesize(name string, exps ...Expr) string {
+func (p Printer) VisitVariableExpr(expr *VariableExpr) (any, error) {
+	return p.parenthesize("var " + expr.Name.Lexeme), nil
+}
+
+func (p *Printer) parenthesize(name string, exps ...Expr) string {
 	result := "(" + name
 
-	for _, exp := range exps {
-		res, _ := exp.Accept(p)
+	for _, expr := range exps {
+		res, _ := expr.Accept(p)
 		result += " " + res.(string)
 	}
 

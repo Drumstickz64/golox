@@ -102,7 +102,7 @@ func (s *Scanner) scanToken() error {
 		} else if isAlpha(char) {
 			s.addIdentifierToken()
 		} else {
-			return scanningError(s.line, s.currentColumn(), fmt.Sprintf("Found unexpected character '%v'", string(char)))
+			return scanningError(s.line, s.currentColumn(), fmt.Sprintf("found unexpected character '%v'", string(char)))
 		}
 	}
 

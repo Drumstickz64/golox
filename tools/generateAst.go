@@ -25,6 +25,7 @@ func main() {
 		"Grouping : Expression Expr",
 		"Literal  : Value any",
 		"Unary    : Operator token.Token, Right Expr",
+		"Variable : Name token.Token",
 	}, []string{
 		"github.com/Drumstickz64/golox/token",
 	})
@@ -36,7 +37,10 @@ func main() {
 	err = defineAst(outputDir, "Stmt", []string{
 		"Expression : Expression Expr",
 		"Print      : Expression Expr",
-	}, []string{})
+		"Var        : Name token.Token, Initializer Expr",
+	}, []string{
+		"github.com/Drumstickz64/golox/token",
+	})
 
 	if err != nil {
 		errors.LogCliError("error while generating expr AST: "+err.Error(), 65)

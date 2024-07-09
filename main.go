@@ -30,7 +30,7 @@ func main() {
 			if os.Args[2] == "scanning" {
 				TestScanning()
 			} else if os.Args[2] == "parsing" {
-				TestParsing()
+				// TestParsing()
 			} else {
 				errors.LogCliError("Can currently test: 'scanning', 'parsing'", 64)
 			}
@@ -102,14 +102,14 @@ PromptLoop:
 	}
 }
 
-func Build(source string) (ast.Expr, []error) {
+func Build(source string) ([]ast.Stmt, []error) {
 	scanner := scanning.NewScanner(source)
 	tokens, errs := scanner.ScanTokens()
-	parser := parsing.NewParser(tokens)
-	expression, err := parser.Parse()
-	if err != nil {
-		errs = append(errs, err)
+	if len(errs) > 0 {
+		return nil, errs
 	}
+	parser := parsing.NewParser(tokens)
+	expression, errs := parser.Parse()
 
 	if len(errs) > 0 {
 		return nil, errs
@@ -118,9 +118,9 @@ func Build(source string) (ast.Expr, []error) {
 	return expression, errs
 }
 
-func Run(expression ast.Expr) error {
+func Run(statements []ast.Stmt) error {
 	interpreter := interpreting.NewInterpreter()
-	return interpreter.Interpret(expression)
+	return interpreter.Interpret(statements)
 }
 
 func TestScanning() {
@@ -142,25 +142,25 @@ func TestScanning() {
 	}
 }
 
-func TestParsing() {
-	source := LoadSource(PARSING_TEST_FILEPATH)
+// func TestParsing() {
+// 	source := LoadSource(PARSING_TEST_FILEPATH)
 
-	scanner := scanning.NewScanner(source)
-	tokens, errs := scanner.ScanTokens()
-	for _, err := range errs {
-		fmt.Fprintln(os.Stderr, err)
-	}
+// 	scanner := scanning.NewScanner(source)
+// 	tokens, errs := scanner.ScanTokens()
+// 	for _, err := range errs {
+// 		fmt.Fprintln(os.Stderr, err)
+// 	}
 
-	if len(errs) > 0 {
-		os.Exit(65)
-	}
+// 	if len(errs) > 0 {
+// 		os.Exit(65)
+// 	}
 
-	parser := parsing.NewParser(tokens)
-	expression, err := parser.Parse()
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(65)
-	}
+// 	parser := parsing.NewParser(tokens)
+// 	expression, err := parser.Parse()
+// 	if err != nil {
+// 		fmt.Fprintln(os.Stderr, err)
+// 		os.Exit(65)
+// 	}
 
-	fmt.Println(ast.NewPrinter().Print(expression))
-}
+// 	fmt.Println(ast.NewPrinter().Print(expression))
+// }

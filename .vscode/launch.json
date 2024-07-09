@@ -10,7 +10,7 @@
       "request": "launch",
       "mode": "auto",
       "program": "${fileDirname}",
-      "args": ["test", "scanning"]
+      "args": ["run_test.lox"]
     }
   ]
 }

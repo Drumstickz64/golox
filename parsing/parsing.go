@@ -26,8 +26,101 @@ func NewParser(tokens []token.Token) Parser {
 	}
 }
 
-func (p *Parser) Parse() (ast.Expr, error) {
-	return p.expression()
+func (p *Parser) Parse() ([]ast.Stmt, []error) {
+	statements := []ast.Stmt{}
+	errs := []error{}
+	for !p.isAtEnd() {
+		statement, err := p.declaration()
+		if err != nil {
+			errs = append(errs, err)
+			continue
+		}
+		statements = append(statements, statement)
+	}
+
+	return statements, errs
+}
+
+func (p *Parser) declaration() (ast.Stmt, error) {
+	if p.match(token.VAR) {
+		decl, err := p.varDeclaration()
+		if err != nil {
+			p.synchronize()
+			return nil, err
+		}
+
+		return decl, nil
+	}
+
+	statement, err := p.statement()
+	if err != nil {
+		p.synchronize()
+		return nil, err
+	}
+
+	return statement, nil
+}
+
+func (p *Parser) varDeclaration() (ast.Stmt, error) {
+	name, err := p.consume(token.IDENTIFIER, "expected variable name after 'var'")
+	if err != nil {
+		return nil, err
+	}
+
+	var initializer ast.Expr = nil
+	if p.match(token.EQUAL) {
+		initializer, err = p.expression()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if _, err := p.consume(token.SEMICOLON, "expected ';' after variable declaration"); err != nil {
+		return nil, err
+	}
+
+	return &ast.VarStmt{
+		Name:        name,
+		Initializer: initializer,
+	}, nil
+}
+
+func (p *Parser) statement() (ast.Stmt, error) {
+	if p.match(token.PRINT) {
+		return p.printStatement()
+	}
+
+	return p.expressionStatement()
+}
+
+func (p *Parser) printStatement() (ast.Stmt, error) {
+	expression, err := p.expression()
+	if err != nil {
+		return nil, err
+	}
+
+	if _, err := p.consume(token.SEMICOLON, "expected ';' after value"); err != nil {
+		return nil, err
+	}
+
+	return &ast.PrintStmt{
+		Expression: expression,
+	}, err
+}
+
+func (p *Parser) expressionStatement() (ast.Stmt, error) {
+	expression, err := p.expression()
+	if err != nil {
+		return nil, err
+	}
+
+	if _, err := p.consume(token.SEMICOLON, "expected ';' after value"); err != nil {
+		return nil, err
+	}
+
+	return &ast.ExpressionStmt{
+		Expression: expression,
+	}, err
 }
 
 func (p *Parser) expression() (ast.Expr, error) {
@@ -35,7 +128,7 @@ func (p *Parser) expression() (ast.Expr, error) {
 }
 
 func (p *Parser) equality() (ast.Expr, error) {
-	exp, err := p.comparison()
+	expr, err := p.comparison()
 	if err != nil {
 		return nil, err
 	}
@@ -47,18 +140,18 @@ func (p *Parser) equality() (ast.Expr, error) {
 			return nil, err
 		}
 
-		exp = &ast.BinaryExpr{
-			Left:     exp,
+		expr = &ast.BinaryExpr{
+			Left:     expr,
 			Operator: operator,
 			Right:    right,
 		}
 	}
 
-	return exp, nil
+	return expr, nil
 }
 
 func (p *Parser) comparison() (ast.Expr, error) {
-	exp, err := p.term()
+	expr, err := p.term()
 	if err != nil {
 		return nil, err
 	}
@@ -70,18 +163,18 @@ func (p *Parser) comparison() (ast.Expr, error) {
 			return nil, err
 		}
 
-		exp = &ast.BinaryExpr{
-			Left:     exp,
+		expr = &ast.BinaryExpr{
+			Left:     expr,
 			Operator: operator,
 			Right:    right,
 		}
 	}
 
-	return exp, nil
+	return expr, nil
 }
 
 func (p *Parser) term() (ast.Expr, error) {
-	exp, err := p.factor()
+	expr, err := p.factor()
 	if err != nil {
 		return nil, err
 	}
@@ -93,18 +186,18 @@ func (p *Parser) term() (ast.Expr, error) {
 			return nil, err
 		}
 
-		exp = &ast.BinaryExpr{
-			Left:     exp,
+		expr = &ast.BinaryExpr{
+			Left:     expr,
 			Operator: operator,
 			Right:    right,
 		}
 	}
 
-	return exp, nil
+	return expr, nil
 }
 
 func (p *Parser) factor() (ast.Expr, error) {
-	exp, err := p.unary()
+	expr, err := p.unary()
 	if err != nil {
 		return nil, err
 	}
@@ -116,14 +209,14 @@ func (p *Parser) factor() (ast.Expr, error) {
 			return nil, err
 		}
 
-		exp = &ast.BinaryExpr{
-			Left:     exp,
+		expr = &ast.BinaryExpr{
+			Left:     expr,
 			Operator: operator,
 			Right:    right,
 		}
 	}
 
-	return exp, nil
+	return expr, nil
 }
 
 func (p *Parser) unary() (ast.Expr, error) {
@@ -134,12 +227,12 @@ func (p *Parser) unary() (ast.Expr, error) {
 			return nil, err
 		}
 
-		exp := &ast.UnaryExpr{
+		expr := &ast.UnaryExpr{
 			Operator: operator,
 			Right:    right,
 		}
 
-		return exp, nil
+		return expr, nil
 	}
 
 	return p.primary()
@@ -162,8 +255,14 @@ func (p *Parser) primary() (ast.Expr, error) {
 		return &ast.LiteralExpr{Value: p.previous().Literal}, nil
 	}
 
+	if p.match(token.IDENTIFIER) {
+		return &ast.VariableExpr{
+			Name: p.previous(),
+		}, nil
+	}
+
 	if p.match(token.LEFT_PAREN) {
-		exp, err := p.expression()
+		expr, err := p.expression()
 		if err != nil {
 			return nil, err
 		}
@@ -173,10 +272,10 @@ func (p *Parser) primary() (ast.Expr, error) {
 			return nil, err
 		}
 
-		return &ast.GroupingExpr{Expression: exp}, nil
+		return &ast.GroupingExpr{Expression: expr}, nil
 	}
 
-	return nil, parsingError(p.peek(), "Failed to parse expression")
+	return nil, parsingError(p.peek(), "failed to parse expression")
 }
 
 func (p *Parser) match(kinds ...token.Kind) bool {

@@ -1,0 +1,6 @@
+print "one";
+print true;
+print 2 + 1 + 2;
+
+var name = "ahmed";
+print "hello, " + name + "!";
