@@ -10,6 +10,7 @@ type ExprVisitor interface {
 	VisitLiteralExpr(*LiteralExpr) (any, error)
 	VisitUnaryExpr(*UnaryExpr) (any, error)
 	VisitVariableExpr(*VariableExpr) (any, error)
+	VisitAssignmentExpr(*AssignmentExpr) (any, error)
 }
 
 type Expr interface {
@@ -57,4 +58,13 @@ type VariableExpr struct {
 
 func (v *VariableExpr) Accept(visitor ExprVisitor) (any, error) {
 	return visitor.VisitVariableExpr(v)
+}
+
+type AssignmentExpr struct {
+	Name  token.Token
+	Value Expr
+}
+
+func (a *AssignmentExpr) Accept(visitor ExprVisitor) (any, error) {
+	return visitor.VisitAssignmentExpr(a)
 }

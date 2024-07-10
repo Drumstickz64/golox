@@ -43,6 +43,10 @@ func (p Printer) VisitVariableExpr(expr *VariableExpr) (any, error) {
 	return p.parenthesize("var " + expr.Name.Lexeme), nil
 }
 
+func (p Printer) VisitAssignmentExpr(expr *AssignmentExpr) (any, error) {
+	return p.parenthesize("=", &LiteralExpr{Value: expr.Name}, expr.Value), nil
+}
+
 func (p *Printer) parenthesize(name string, exps ...Expr) string {
 	result := "(" + name
 

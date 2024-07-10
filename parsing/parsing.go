@@ -1,6 +1,9 @@
 package parsing
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/Drumstickz64/golox/assert"
 	"github.com/Drumstickz64/golox/ast"
 	"github.com/Drumstickz64/golox/errors"
@@ -124,7 +127,35 @@ func (p *Parser) expressionStatement() (ast.Stmt, error) {
 }
 
 func (p *Parser) expression() (ast.Expr, error) {
-	return p.equality()
+	return p.assignment()
+}
+
+func (p *Parser) assignment() (ast.Expr, error) {
+	expr, err := p.equality()
+	if err != nil {
+		return nil, err
+	}
+
+	if p.match(token.EQUAL) {
+		varExpr, isVarExpr := expr.(*ast.VariableExpr)
+		if !isVarExpr {
+			equals := p.previous()
+			// REFACTOR: add ParsingError struct with IsFatal field, add ScanningError too
+			fmt.Fprintln(os.Stderr, parsingError(equals, "invalid assignment target"))
+		}
+
+		value, err := p.assignment()
+		if err != nil {
+			return nil, err
+		}
+
+		return &ast.AssignmentExpr{
+			Name:  varExpr.Name,
+			Value: value,
+		}, nil
+	}
+
+	return expr, nil
 }
 
 func (p *Parser) equality() (ast.Expr, error) {

@@ -1,0 +1,26 @@
+print "Hello" + " World";
+print (1 + 2 - 3) / (4 * -5);
+print 1 > 2;
+print 1 >= 2;
+print 1 < 2;
+print 1 <= 2;
+print 1 == 2;
+print 1 != 2;
+
+var name = "ahmed";
+var age = 12;
+
+print "Hello. My name is " + name + ", and my age is:";
+print age;
+
+var a;
+var b;
+var c = 1;
+
+print b;
+
+a = b = c;
+
+print a;
+print b;
+print c;

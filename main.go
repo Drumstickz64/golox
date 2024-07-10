@@ -15,26 +15,20 @@ import (
 	"github.com/Drumstickz64/golox/scanning"
 )
 
-const (
-	SCANNING_TEST_FILEPATH = "scanning_test.lox"
-	PARSING_TEST_FILEPATH  = "parsing_test.lox"
-)
-
 func main() {
 	if len(os.Args) == 1 {
 		RunPrompt()
 	} else if len(os.Args) == 2 {
 		RunFile(os.Args[1])
 	} else if len(os.Args) == 3 {
-		if os.Args[1] == "test" {
-			if os.Args[2] == "scanning" {
-				TestScanning()
-			} else if os.Args[2] == "parsing" {
-				// TestParsing()
-			} else {
-				errors.LogCliError("Can currently test: 'scanning', 'parsing'", 64)
-			}
-		} else {
+		switch os.Args[2] {
+		case "scan":
+			TestScanning(os.Args[1])
+		case "parse":
+			TestParsing(os.Args[1])
+		case "run":
+			RunFile(os.Args[1])
+		default:
 			errors.LogUsageMessage()
 		}
 	} else {
@@ -123,8 +117,8 @@ func Run(statements []ast.Stmt) error {
 	return interpreter.Interpret(statements)
 }
 
-func TestScanning() {
-	source := LoadSource(SCANNING_TEST_FILEPATH)
+func TestScanning(pth string) {
+	source := LoadSource(pth)
 
 	scanner := scanning.NewScanner(source)
 	tokens, errs := scanner.ScanTokens()
@@ -142,25 +136,26 @@ func TestScanning() {
 	}
 }
 
-// func TestParsing() {
-// 	source := LoadSource(PARSING_TEST_FILEPATH)
+func TestParsing(pth string) {
+	panic("Parsing test currently unavailable")
+	// source := LoadSource(pth)
 
-// 	scanner := scanning.NewScanner(source)
-// 	tokens, errs := scanner.ScanTokens()
-// 	for _, err := range errs {
-// 		fmt.Fprintln(os.Stderr, err)
-// 	}
+	// scanner := scanning.NewScanner(source)
+	// tokens, errs := scanner.ScanTokens()
+	// for _, err := range errs {
+	// 	fmt.Fprintln(os.Stderr, err)
+	// }
 
-// 	if len(errs) > 0 {
-// 		os.Exit(65)
-// 	}
+	// if len(errs) > 0 {
+	// 	os.Exit(65)
+	// }
 
-// 	parser := parsing.NewParser(tokens)
-// 	expression, err := parser.Parse()
-// 	if err != nil {
-// 		fmt.Fprintln(os.Stderr, err)
-// 		os.Exit(65)
-// 	}
+	// parser := parsing.NewParser(tokens)
+	// expression, err := parser.Parse()
+	// if err != nil {
+	// 	fmt.Fprintln(os.Stderr, err)
+	// 	os.Exit(65)
+	// }
 
-// 	fmt.Println(ast.NewPrinter().Print(expression))
-// }
+	// fmt.Println(ast.NewPrinter().Print(expression))
+}

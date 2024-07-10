@@ -13,7 +13,8 @@ func LogCliError(msg any, exitCode int) {
 }
 
 func LogUsageMessage() {
-	LogCliError("Usage: golox [script] | golox test <operation>", 64)
+	fmt.Fprintln(os.Stderr, "Usage: golox [script [scan|parse|run]]")
+	os.Exit(64)
 }
 
 func NewBuildtimeError(line, column int, where string, msg any) error {

@@ -15,10 +15,10 @@ type Environment struct {
 	values map[string]any
 }
 
-func (e *Environment) Get(tok token.Token) (any, error) {
-	value, ok := e.values[tok.Lexeme]
+func (e *Environment) Get(name token.Token) (any, error) {
+	value, ok := e.values[name.Lexeme]
 	if !ok {
-		return nil, errors.NewRuntimeError(tok, fmt.Sprintf("undefined variable '%v'", tok.Lexeme))
+		return nil, errors.NewRuntimeError(name, fmt.Sprintf("undefined variable '%v'", name.Lexeme))
 	}
 
 	return value, nil
@@ -26,4 +26,15 @@ func (e *Environment) Get(tok token.Token) (any, error) {
 
 func (e *Environment) Define(name string, value any) {
 	e.values[name] = value
+}
+
+func (e *Environment) Assign(name token.Token, value any) error {
+	_, exists := e.values[name.Lexeme]
+	if !exists {
+		return errors.NewRuntimeError(name, fmt.Sprintf("undefined variable '%v'", name.Lexeme))
+	}
+
+	e.values[name.Lexeme] = value
+
+	return nil
 }

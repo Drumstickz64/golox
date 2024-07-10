@@ -26,6 +26,7 @@ func main() {
 		"Literal  : Value any",
 		"Unary    : Operator token.Token, Right Expr",
 		"Variable : Name token.Token",
+		"Assignment : Name token.Token, Value Expr",
 	}, []string{
 		"github.com/Drumstickz64/golox/token",
 	})
