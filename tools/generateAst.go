@@ -36,6 +36,7 @@ func main() {
 	}
 
 	err = defineAst(outputDir, "Stmt", []string{
+		"Block      : Statements []Stmt",
 		"Expression : Expression Expr",
 		"Print      : Expression Expr",
 		"Var        : Name token.Token, Initializer Expr",

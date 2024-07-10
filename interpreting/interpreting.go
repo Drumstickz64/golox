@@ -12,7 +12,7 @@ import (
 )
 
 type Interpreter struct {
-	env environment.Environment
+	env *environment.Environment
 }
 
 func NewInterpreter() Interpreter {
@@ -168,6 +168,14 @@ func (i *Interpreter) VisitExpressionStmt(stmt *ast.ExpressionStmt) (any, error)
 	return nil, err
 }
 
+func (i *Interpreter) VisitBlockStmt(stmt *ast.BlockStmt) (any, error) {
+	if err := i.executeBlock(stmt.Statements, environment.WithEnclosing(i.env)); err != nil {
+		return nil, err
+	}
+
+	return nil, nil
+}
+
 func (i *Interpreter) VisitVarStmt(stmt *ast.VarStmt) (any, error) {
 	var value any = nil
 
@@ -200,6 +208,20 @@ func checkNumberOperandBinary(operator token.Token, left, right any) error {
 	}
 
 	return errors.NewRuntimeError(operator, "operand must be a number")
+}
+
+func (i *Interpreter) executeBlock(statements []ast.Stmt, env *environment.Environment) error {
+	previousEnv := i.env
+	i.env = env
+	for _, statement := range statements {
+		if err := i.execute(statement); err != nil {
+			return err
+		}
+	}
+
+	i.env = previousEnv
+
+	return nil
 }
 
 func (i *Interpreter) execute(stmt ast.Stmt) error {

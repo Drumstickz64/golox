@@ -81,16 +81,16 @@ PromptLoop:
 		line = strings.TrimSpace(line)
 
 		if line == "" {
-			break
+			continue PromptLoop
 		}
 
-		expression, errs := Build(line)
+		statements, errs := Build(line)
 		for _, err := range errs {
 			fmt.Fprintln(os.Stderr, err)
 			continue PromptLoop
 		}
 
-		if err := Run(expression); err != nil {
+		if err := Run(statements); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 		}
 	}
