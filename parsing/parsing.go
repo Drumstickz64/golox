@@ -93,6 +93,10 @@ func (p *Parser) statement() (ast.Stmt, error) {
 		return p.printStatement()
 	}
 
+	if p.match(token.IF) {
+		return p.ifStatement()
+	}
+
 	if p.match(token.LEFT_BRACE) {
 		statements, err := p.block()
 		if err != nil {
@@ -120,6 +124,40 @@ func (p *Parser) printStatement() (ast.Stmt, error) {
 	return &ast.PrintStmt{
 		Expression: expression,
 	}, err
+}
+
+func (p *Parser) ifStatement() (ast.Stmt, error) {
+	if _, err := p.consume(token.LEFT_PAREN, "expected '(' after 'if'"); err != nil {
+		return nil, err
+	}
+
+	condition, err := p.expression()
+	if err != nil {
+		return nil, err
+	}
+
+	if _, err := p.consume(token.RIGHT_PAREN, "expected ')' after if condition"); err != nil {
+		return nil, err
+	}
+
+	thenBranch, err := p.statement()
+	if err != nil {
+		return nil, err
+	}
+
+	var elseBranch ast.Stmt = nil
+	if p.match(token.ELSE) {
+		elseBranch, err = p.statement()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return &ast.IfStmt{
+		Condition:  condition,
+		ThenBranch: thenBranch,
+		ElseBranch: elseBranch,
+	}, nil
 }
 
 func (p *Parser) expressionStatement() (ast.Stmt, error) {

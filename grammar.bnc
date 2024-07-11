@@ -1,22 +1,26 @@
 program        -> declaration* EOF ;
 
 declaration    -> varDeclaration
-                | statement
+                | statement ;
 
 varDeclaration -> "var" IDENTIFIER ( "=" expression )? ";" ;
 
 statement      -> exprStmt
+                | ifStmt
                 | printStmt
                 | block ;
 
-block          -> "{" declaration* "}"
+block          -> "{" declaration* "}" ;
+
+ifStmt         -> "if" "(" expression ")" statement
+                  ( "else" statement )? ;
 
 exprStmt       -> expression ";" ;
 printStmt      -> "print" expression ";" ;
 
 expression     -> assignment ;
 assignment     -> IDENTIFIER "=" expression
-                | equality
+                | equality;
 equality       -> comparison ( ( "!=" | "==" ) comparison )* ;
 comparison     -> term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
 term           -> factor ( ( "-" | "+" ) factor )* ;

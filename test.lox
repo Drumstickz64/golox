@@ -50,3 +50,13 @@ var d = 1;
   var d = d + 2;
   print d;
 }
+
+var apples = 10;
+if (apples == 10) print "ten apples!";
+else {
+  print "Oh. Apples are";
+  print apples;
+}
+
+var shouldRun = true;
+if (shouldRun) print "Running.";

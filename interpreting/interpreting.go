@@ -163,6 +163,31 @@ func (i *Interpreter) VisitPrintStmt(stmt *ast.PrintStmt) (any, error) {
 	return nil, nil
 }
 
+func (i *Interpreter) VisitIfStmt(stmt *ast.IfStmt) (any, error) {
+	condition, err := i.evaluate(stmt.Condition)
+	if err != nil {
+		return nil, err
+	}
+
+	if isTruthy(condition) {
+		if err := i.execute(stmt.ThenBranch); err != nil {
+			return nil, err
+		}
+
+		return nil, nil
+	}
+
+	if stmt.ElseBranch == nil {
+		return nil, nil
+	}
+
+	if err := i.execute(stmt.ElseBranch); err != nil {
+		return nil, err
+	}
+
+	return nil, nil
+}
+
 func (i *Interpreter) VisitExpressionStmt(stmt *ast.ExpressionStmt) (any, error) {
 	_, err := i.evaluate(stmt.Expression)
 	return nil, err
