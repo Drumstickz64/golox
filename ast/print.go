@@ -23,6 +23,10 @@ func (p Printer) VisitBinaryExpr(expr *BinaryExpr) (any, error) {
 	return p.parenthesize(expr.Operator.Lexeme, expr.Left, expr.Right), nil
 }
 
+func (p Printer) VisitLogicalExpr(expr *LogicalExpr) (any, error) {
+	return p.parenthesize(expr.Operator.Lexeme, expr.Left, expr.Right), nil
+}
+
 func (p Printer) VisitGroupingExpr(expr *GroupingExpr) (any, error) {
 	return p.parenthesize("group", expr.Expression), nil
 }

@@ -135,6 +135,27 @@ func (i *Interpreter) VisitBinaryExpr(expr *ast.BinaryExpr) (any, error) {
 	return assert.Unreachable(fmt.Sprintf("'%v' is a valid binary operator", expr.Operator.Kind)), nil
 }
 
+func (i *Interpreter) VisitLogicalExpr(expr *ast.LogicalExpr) (any, error) {
+	assert.That(expr.Operator.Kind == token.OR || expr.Operator.Kind == token.AND, "logical operator is either 'and' or 'or'")
+
+	left, err := i.evaluate(expr.Left)
+	if err != nil {
+		return nil, err
+	}
+
+	if expr.Operator.Kind == token.OR && isTruthy(left) ||
+		expr.Operator.Kind == token.AND && !isTruthy(left) {
+		return left, nil
+	}
+
+	right, err := i.evaluate(expr.Right)
+	if err != nil {
+		return nil, err
+	}
+
+	return right, nil
+}
+
 func (i *Interpreter) VisitVariableExpr(expr *ast.VariableExpr) (any, error) {
 	return i.env.Get(expr.Name)
 }

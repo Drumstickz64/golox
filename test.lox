@@ -60,3 +60,25 @@ else {
 
 var shouldRun = true;
 if (shouldRun) print "Running.";
+
+print "---- logical test ----";
+
+print "-- should be false --";
+var l = 12;
+print 1 == 2 or 2 != 1 and l == 2;
+
+print "-- should be true --";
+print (l = 2) == 2 or false and true;
+
+if (l == 2) {
+  print "l changed successfully!";
+  print "l now equals: ";
+  print l;
+}
+
+print "--- non bools ---";
+print "-- should print 1 --";
+print 1 or nil;
+
+print "-- should print false --";
+print 1 and false;

@@ -198,7 +198,7 @@ func (p *Parser) expression() (ast.Expr, error) {
 }
 
 func (p *Parser) assignment() (ast.Expr, error) {
-	expr, err := p.equality()
+	expr, err := p.logical_or()
 	if err != nil {
 		return nil, err
 	}
@@ -220,6 +220,52 @@ func (p *Parser) assignment() (ast.Expr, error) {
 			Name:  varExpr.Name,
 			Value: value,
 		}, nil
+	}
+
+	return expr, nil
+}
+
+func (p *Parser) logical_or() (ast.Expr, error) {
+	expr, err := p.logical_and()
+	if err != nil {
+		return nil, err
+	}
+
+	for p.match(token.OR) {
+		operator := p.previous()
+		right, err := p.logical_and()
+		if err != nil {
+			return nil, err
+		}
+
+		expr = &ast.LogicalExpr{
+			Left:     expr,
+			Operator: operator,
+			Right:    right,
+		}
+	}
+
+	return expr, nil
+}
+
+func (p *Parser) logical_and() (ast.Expr, error) {
+	expr, err := p.equality()
+	if err != nil {
+		return nil, err
+	}
+
+	for p.match(token.AND) {
+		operator := p.previous()
+		right, err := p.equality()
+		if err != nil {
+			return nil, err
+		}
+
+		expr = &ast.LogicalExpr{
+			Left:     expr,
+			Operator: operator,
+			Right:    right,
+		}
 	}
 
 	return expr, nil

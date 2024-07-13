@@ -6,6 +6,7 @@ import (
 
 type ExprVisitor interface {
 	VisitBinaryExpr(*BinaryExpr) (any, error)
+	VisitLogicalExpr(*LogicalExpr) (any, error)
 	VisitGroupingExpr(*GroupingExpr) (any, error)
 	VisitLiteralExpr(*LiteralExpr) (any, error)
 	VisitUnaryExpr(*UnaryExpr) (any, error)
@@ -25,6 +26,16 @@ type BinaryExpr struct {
 
 func (b *BinaryExpr) Accept(visitor ExprVisitor) (any, error) {
 	return visitor.VisitBinaryExpr(b)
+}
+
+type LogicalExpr struct {
+	Left     Expr
+	Operator token.Token
+	Right    Expr
+}
+
+func (l *LogicalExpr) Accept(visitor ExprVisitor) (any, error) {
+	return visitor.VisitLogicalExpr(l)
 }
 
 type GroupingExpr struct {
