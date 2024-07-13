@@ -7,6 +7,7 @@ import (
 type StmtVisitor interface {
 	VisitBlockStmt(*BlockStmt) (any, error)
 	VisitExpressionStmt(*ExpressionStmt) (any, error)
+	VisitWhileStmt(*WhileStmt) (any, error)
 	VisitIfStmt(*IfStmt) (any, error)
 	VisitPrintStmt(*PrintStmt) (any, error)
 	VisitVarStmt(*VarStmt) (any, error)
@@ -30,6 +31,15 @@ type ExpressionStmt struct {
 
 func (e *ExpressionStmt) Accept(visitor StmtVisitor) (any, error) {
 	return visitor.VisitExpressionStmt(e)
+}
+
+type WhileStmt struct {
+	Condition Expr
+	Body      Stmt
+}
+
+func (w *WhileStmt) Accept(visitor StmtVisitor) (any, error) {
+	return visitor.VisitWhileStmt(w)
 }
 
 type IfStmt struct {

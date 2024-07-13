@@ -82,3 +82,11 @@ print 1 or nil;
 
 print "-- should print false --";
 print 1 and false;
+
+print "---- while loop test ----";
+
+var i = 5;
+while (i > 0) {
+  print i;
+  i = i - 1;
+}

@@ -93,6 +93,10 @@ func (p *Parser) statement() (ast.Stmt, error) {
 		return p.printStatement()
 	}
 
+	if p.match(token.WHILE) {
+		return p.whileStatement()
+	}
+
 	if p.match(token.IF) {
 		return p.ifStatement()
 	}
@@ -124,6 +128,31 @@ func (p *Parser) printStatement() (ast.Stmt, error) {
 	return &ast.PrintStmt{
 		Expression: expression,
 	}, err
+}
+
+func (p *Parser) whileStatement() (ast.Stmt, error) {
+	if _, err := p.consume(token.LEFT_PAREN, "expected '(' after 'while'"); err != nil {
+		return nil, err
+	}
+
+	condition, err := p.expression()
+	if err != nil {
+		return nil, err
+	}
+
+	if _, err := p.consume(token.RIGHT_PAREN, "expected ')' after condition in while statment"); err != nil {
+		return nil, err
+	}
+
+	body, err := p.statement()
+	if err != nil {
+		return nil, err
+	}
+
+	return &ast.WhileStmt{
+		Condition: condition,
+		Body:      body,
+	}, nil
 }
 
 func (p *Parser) ifStatement() (ast.Stmt, error) {

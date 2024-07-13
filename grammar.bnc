@@ -8,9 +8,12 @@ varDeclaration -> "var" IDENTIFIER ( "=" expression )? ";" ;
 statement      -> exprStmt
                 | ifStmt
                 | printStmt
+                | whileStmt
                 | block ;
 
 block          -> "{" declaration* "}" ;
+
+whileStmt      -> "while" "(" expression ")" statement ;
 
 ifStmt         -> "if" "(" expression ")" statement
                   ( "else" statement )? ;

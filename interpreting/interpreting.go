@@ -184,6 +184,23 @@ func (i *Interpreter) VisitPrintStmt(stmt *ast.PrintStmt) (any, error) {
 	return nil, nil
 }
 
+func (i *Interpreter) VisitWhileStmt(stmt *ast.WhileStmt) (any, error) {
+	for {
+		condition, err := i.evaluate(stmt.Condition)
+		if err != nil {
+			return nil, err
+		}
+
+		if !isTruthy(condition) {
+			return nil, nil
+		}
+
+		if err := i.execute(stmt.Body); err != nil {
+			return nil, err
+		}
+	}
+}
+
 func (i *Interpreter) VisitIfStmt(stmt *ast.IfStmt) (any, error) {
 	condition, err := i.evaluate(stmt.Condition)
 	if err != nil {
