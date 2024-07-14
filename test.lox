@@ -17,6 +17,9 @@ var a;
 var b;
 var c = 1;
 
+// var 1 = 1; invalid
+// 1 = 2; invalid
+
 print b;
 
 a = b = c;

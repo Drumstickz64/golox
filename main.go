@@ -96,20 +96,20 @@ PromptLoop:
 	}
 }
 
-func Build(source string) ([]ast.Stmt, []error) {
+func Build(source string) ([]ast.Stmt, []errors.BuildError) {
 	scanner := scanning.NewScanner(source)
 	tokens, errs := scanner.ScanTokens()
 	if len(errs) > 0 {
 		return nil, errs
 	}
 	parser := parsing.NewParser(tokens)
-	expression, errs := parser.Parse()
+	statements, errs := parser.Parse()
 
 	if len(errs) > 0 {
 		return nil, errs
 	}
 
-	return expression, errs
+	return statements, errs
 }
 
 func Run(statements []ast.Stmt) error {

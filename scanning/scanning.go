@@ -9,8 +9,13 @@ import (
 	"github.com/Drumstickz64/golox/token"
 )
 
-func scanningError(line, column int, msg any) error {
-	return errors.NewBuildtimeError(line, column, "", msg)
+type ScanError struct {
+	Line, Column int
+	Message      any
+}
+
+func (e ScanError) Error() string {
+	return fmt.Sprintf("[on %d:%d] error: %v", e.Line, e.Column, e.Message)
 }
 
 type Scanner struct {
@@ -27,8 +32,8 @@ func NewScanner(source string) Scanner {
 	}
 }
 
-func (s *Scanner) ScanTokens() ([]token.Token, []error) {
-	errs := []error{}
+func (s *Scanner) ScanTokens() ([]token.Token, []errors.BuildError) {
+	errs := []errors.BuildError{}
 	for !s.isAtEnd() {
 		s.start = s.current
 		if err := s.scanToken(); err != nil {
@@ -47,7 +52,7 @@ func (s *Scanner) ScanTokens() ([]token.Token, []error) {
 	return s.tokens, errs
 }
 
-func (s *Scanner) scanToken() error {
+func (s *Scanner) scanToken() *ScanError {
 	char := s.advance()
 	switch char {
 	case '(':
@@ -102,7 +107,7 @@ func (s *Scanner) scanToken() error {
 		} else if isAlpha(char) {
 			s.addIdentifierToken()
 		} else {
-			return scanningError(s.line, s.currentColumn(), fmt.Sprintf("found unexpected character '%v'", string(char)))
+			return s.newError(fmt.Sprintf("found unexpected character '%v'", string(char)))
 		}
 	}
 
@@ -164,7 +169,7 @@ func (s *Scanner) addCompoundToken(completingChar rune, compound, simple token.K
 
 }
 
-func (s *Scanner) addStringToken() error {
+func (s *Scanner) addStringToken() *ScanError {
 	for s.peek() != '"' && !s.isAtEnd() {
 		if s.peek() == '\n' {
 			s.line++
@@ -175,7 +180,7 @@ func (s *Scanner) addStringToken() error {
 	}
 
 	if s.isAtEnd() {
-		return scanningError(s.line, s.currentColumn(), "Unterminated string")
+		return s.newError("Unterminated string")
 	}
 
 	// consume last "
@@ -243,7 +248,7 @@ func (s *Scanner) dropLine() {
 	}
 }
 
-func (s *Scanner) ignoreMultilineComment() error {
+func (s *Scanner) ignoreMultilineComment() *ScanError {
 	for !(s.peek() == '*' && s.peekNext() == '/') && !s.isAtEnd() {
 		if s.peek() == '\n' {
 			s.line++
@@ -254,7 +259,7 @@ func (s *Scanner) ignoreMultilineComment() error {
 	}
 
 	if s.isAtEnd() {
-		return scanningError(s.line, s.currentColumn(), "Unterminated multi-line comment, expected '*/'")
+		return s.newError("Unterminated multi-line comment, expected '*/'")
 	}
 
 	// consume the closing */
@@ -262,6 +267,14 @@ func (s *Scanner) ignoreMultilineComment() error {
 	s.advance() // consume /
 
 	return nil
+}
+
+func (s *Scanner) newError(message any) *ScanError {
+	return &ScanError{
+		Line:    s.line,
+		Column:  s.currentColumn(),
+		Message: message,
+	}
 }
 
 func (s *Scanner) currentColumn() int {
