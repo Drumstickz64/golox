@@ -10,7 +10,9 @@ type StmtVisitor interface {
 	VisitWhileStmt(*WhileStmt) (any, error)
 	VisitIfStmt(*IfStmt) (any, error)
 	VisitPrintStmt(*PrintStmt) (any, error)
+	VisitReturnStmt(*ReturnStmt) (any, error)
 	VisitVarStmt(*VarStmt) (any, error)
+	VisitFunctionStmt(*FunctionStmt) (any, error)
 }
 
 type Stmt interface {
@@ -60,6 +62,15 @@ func (p *PrintStmt) Accept(visitor StmtVisitor) (any, error) {
 	return visitor.VisitPrintStmt(p)
 }
 
+type ReturnStmt struct {
+	Keyword token.Token
+	Value   Expr
+}
+
+func (r *ReturnStmt) Accept(visitor StmtVisitor) (any, error) {
+	return visitor.VisitReturnStmt(r)
+}
+
 type VarStmt struct {
 	Name        token.Token
 	Initializer Expr
@@ -67,4 +78,14 @@ type VarStmt struct {
 
 func (v *VarStmt) Accept(visitor StmtVisitor) (any, error) {
 	return visitor.VisitVarStmt(v)
+}
+
+type FunctionStmt struct {
+	Name       token.Token
+	Parameters []token.Token
+	Body       []Stmt
+}
+
+func (f *FunctionStmt) Accept(visitor StmtVisitor) (any, error) {
+	return visitor.VisitFunctionStmt(f)
 }

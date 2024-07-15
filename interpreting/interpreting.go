@@ -13,8 +13,10 @@ import (
 )
 
 type Interpreter struct {
-	globals *environment.Environment
-	env     *environment.Environment
+	globals     *environment.Environment
+	env         *environment.Environment
+	isReturning bool
+	returnValue any
 }
 
 func NewInterpreter() Interpreter {
@@ -23,7 +25,7 @@ func NewInterpreter() Interpreter {
 	globals.Define("clock", &nativeFunction{
 		arity: 0,
 		call: func(interpreter *Interpreter, arguments []any) any {
-			return time.Now().Unix()
+			return float64(time.Now().Unix())
 		},
 	})
 
@@ -224,6 +226,21 @@ func (i *Interpreter) VisitPrintStmt(stmt *ast.PrintStmt) (any, error) {
 	return nil, nil
 }
 
+func (i *Interpreter) VisitReturnStmt(stmt *ast.ReturnStmt) (any, error) {
+	var value any
+	if stmt.Value != nil {
+		var err error
+		value, err = i.evaluate(stmt.Value)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	i.isReturning = true
+	i.returnValue = value
+	return value, nil
+}
+
 func (i *Interpreter) VisitWhileStmt(stmt *ast.WhileStmt) (any, error) {
 	for {
 		condition, err := i.evaluate(stmt.Condition)
@@ -237,6 +254,10 @@ func (i *Interpreter) VisitWhileStmt(stmt *ast.WhileStmt) (any, error) {
 
 		if err := i.execute(stmt.Body); err != nil {
 			return nil, err
+		}
+
+		if i.isReturning {
+			return nil, nil
 		}
 	}
 }
@@ -294,6 +315,12 @@ func (i *Interpreter) VisitVarStmt(stmt *ast.VarStmt) (any, error) {
 	return nil, nil
 }
 
+func (i *Interpreter) VisitFunctionStmt(stmt *ast.FunctionStmt) (any, error) {
+	fun := newFunction(stmt)
+	i.env.Define(stmt.Name.Lexeme, fun)
+	return nil, nil
+}
+
 func checkNumberOperandUnary(operator token.Token, operand any) error {
 	_, ok := operand.(float64)
 	if ok {
@@ -316,13 +343,16 @@ func checkNumberOperandBinary(operator token.Token, left, right any) error {
 func (i *Interpreter) executeBlock(statements []ast.Stmt, env *environment.Environment) error {
 	previousEnv := i.env
 	i.env = env
+	defer func() { i.env = previousEnv }()
 	for _, statement := range statements {
 		if err := i.execute(statement); err != nil {
 			return err
 		}
-	}
 
-	i.env = previousEnv
+		if i.isReturning {
+			return nil
+		}
+	}
 
 	return nil
 }

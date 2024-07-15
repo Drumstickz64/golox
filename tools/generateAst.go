@@ -43,7 +43,9 @@ func main() {
 		"While      : Condition Expr, Body Stmt",
 		"If         : Condition Expr, ThenBranch Stmt, ElseBranch Stmt",
 		"Print      : Expression Expr",
+		"Return     : Keyword token.Token, Value Expr",
 		"Var        : Name token.Token, Initializer Expr",
+		"Function   : Name token.Token, Parameters []token.Token, Body []Stmt",
 	}, []string{
 		"github.com/Drumstickz64/golox/token",
 	})

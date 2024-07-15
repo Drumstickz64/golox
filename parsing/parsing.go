@@ -56,6 +56,16 @@ func (p *Parser) Parse() ([]ast.Stmt, []errors.BuildError) {
 }
 
 func (p *Parser) declaration() (ast.Stmt, *ParseError) {
+	if p.match(token.FUN) {
+		fun, err := p.function("function")
+		if err != nil {
+			p.synchronize()
+			return nil, err
+		}
+
+		return fun, nil
+	}
+
 	if p.match(token.VAR) {
 		decl, err := p.varDeclaration()
 		if err != nil {
@@ -73,6 +83,58 @@ func (p *Parser) declaration() (ast.Stmt, *ParseError) {
 	}
 
 	return statement, nil
+}
+
+func (p *Parser) function(kind string) (*ast.FunctionStmt, *ParseError) {
+	name, err := p.consume(token.IDENTIFIER, fmt.Sprintf("expected %s name", kind))
+	if err != nil {
+		return nil, err
+	}
+
+	if _, err := p.consume(token.LEFT_PAREN, fmt.Sprintf("expected '(' after %s name", kind)); err != nil {
+		return nil, err
+	}
+
+	parameters := []token.Token{}
+	if !p.check(token.RIGHT_PAREN) {
+		for {
+			if len(parameters) >= 255 {
+				return nil, &ParseError{
+					Token:       p.peek(),
+					Message:     "can't have more than 255 parameters",
+					ShouldPanic: false,
+				}
+			}
+
+			parameter, err := p.consume(token.IDENTIFIER, "expected parameter name")
+			if err != nil {
+				return nil, err
+			}
+			parameters = append(parameters, parameter)
+			if !p.match(token.COMMA) {
+				break
+			}
+		}
+	}
+
+	if _, err := p.consume(token.RIGHT_PAREN, fmt.Sprintf("expected ')' after %s parameters", kind)); err != nil {
+		return nil, err
+	}
+
+	if _, err := p.consume(token.LEFT_BRACE, fmt.Sprintf("expected '{' before %s name", kind)); err != nil {
+		return nil, err
+	}
+
+	body, err := p.block()
+	if err != nil {
+		return nil, err
+	}
+
+	return &ast.FunctionStmt{
+		Name:       name,
+		Parameters: parameters,
+		Body:       body,
+	}, nil
 }
 
 func (p *Parser) varDeclaration() (ast.Stmt, *ParseError) {
@@ -102,6 +164,10 @@ func (p *Parser) varDeclaration() (ast.Stmt, *ParseError) {
 func (p *Parser) statement() (ast.Stmt, *ParseError) {
 	if p.match(token.PRINT) {
 		return p.printStatement()
+	}
+
+	if p.match(token.RETURN) {
+		return p.returnStatement()
 	}
 
 	if p.match(token.FOR) {
@@ -143,6 +209,27 @@ func (p *Parser) printStatement() (ast.Stmt, *ParseError) {
 	return &ast.PrintStmt{
 		Expression: expression,
 	}, err
+}
+
+func (p *Parser) returnStatement() (ast.Stmt, *ParseError) {
+	keyword := p.previous()
+	var valueExpr ast.Expr
+	if !p.check(token.SEMICOLON) {
+		var err *ParseError
+		valueExpr, err = p.expression()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if _, err := p.consume(token.SEMICOLON, "expected ';' after return value"); err != nil {
+		return nil, err
+	}
+
+	return &ast.ReturnStmt{
+		Keyword: keyword,
+		Value:   valueExpr,
+	}, nil
 }
 
 func (p *Parser) forStatement() (ast.Stmt, *ParseError) {
