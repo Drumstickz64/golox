@@ -3,6 +3,7 @@ package interpreting
 import (
 	"fmt"
 	"reflect"
+	"time"
 
 	"github.com/Drumstickz64/golox/assert"
 	"github.com/Drumstickz64/golox/ast"
@@ -12,12 +13,23 @@ import (
 )
 
 type Interpreter struct {
-	env *environment.Environment
+	globals *environment.Environment
+	env     *environment.Environment
 }
 
 func NewInterpreter() Interpreter {
+	globals := environment.New()
+
+	globals.Define("clock", &nativeFunction{
+		arity: 0,
+		call: func(interpreter *Interpreter, arguments []any) any {
+			return time.Now().Unix()
+		},
+	})
+
 	return Interpreter{
-		env: environment.New(),
+		globals: globals,
+		env:     globals,
 	}
 }
 
@@ -37,6 +49,34 @@ func (i *Interpreter) VisitLiteralExpr(expr *ast.LiteralExpr) (any, error) {
 
 func (i *Interpreter) VisitGroupingExpr(expr *ast.GroupingExpr) (any, error) {
 	return i.evaluate(expr.Expression)
+}
+
+func (i *Interpreter) VisitCallExpr(expr *ast.CallExpr) (any, error) {
+	callee, err := i.evaluate(expr.Callee)
+	if err != nil {
+		return nil, err
+	}
+
+	arguments := []any{}
+	for _, argument := range expr.Arguments {
+		value, err := i.evaluate(argument)
+		if err != nil {
+			return nil, err
+		}
+
+		arguments = append(arguments, value)
+	}
+
+	callable, ok := callee.(Callable)
+	if !ok {
+		return nil, errors.NewRuntimeError(expr.Paren, "can only call functions and classes")
+	}
+
+	if len(arguments) != callable.Arity() {
+		return nil, errors.NewRuntimeError(expr.Paren, fmt.Sprintf("expected %d arguments but got %d instead", callable.Arity(), len(arguments)))
+	}
+
+	return callable.Call(i, arguments), nil
 }
 
 func (i *Interpreter) VisitUnaryExpr(expr *ast.UnaryExpr) (any, error) {

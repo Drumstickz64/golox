@@ -504,7 +504,55 @@ func (p *Parser) unary() (ast.Expr, *ParseError) {
 		return expr, nil
 	}
 
-	return p.primary()
+	return p.call()
+}
+
+func (p *Parser) call() (ast.Expr, *ParseError) {
+	expr, err := p.primary()
+	if err != nil {
+		return nil, err
+	}
+
+	for {
+		if p.match(token.LEFT_PAREN) {
+			expr, err = p.finishCall(expr)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			break
+		}
+	}
+
+	return expr, nil
+}
+
+func (p *Parser) finishCall(callee ast.Expr) (ast.Expr, *ParseError) {
+	arguments := []ast.Expr{}
+	if !p.check(token.RIGHT_PAREN) {
+		for {
+			argument, err := p.expression()
+			if err != nil {
+				return nil, err
+			}
+			arguments = append(arguments, argument)
+
+			if !p.match(token.COMMA) {
+				break
+			}
+		}
+	}
+
+	paren, err := p.consume(token.RIGHT_PAREN, "expected ')' after arguments")
+	if err != nil {
+		return nil, err
+	}
+
+	return &ast.CallExpr{
+		Callee:    callee,
+		Paren:     paren,
+		Arguments: arguments,
+	}, nil
 }
 
 func (p *Parser) primary() (ast.Expr, *ParseError) {

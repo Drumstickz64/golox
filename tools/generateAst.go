@@ -26,6 +26,7 @@ func main() {
 		"Grouping : Expression Expr",
 		"Literal  : Value any",
 		"Unary    : Operator token.Token, Right Expr",
+		"Call     : Callee Expr, Paren token.Token, Arguments []Expr",
 		"Variable : Name token.Token",
 		"Assignment : Name token.Token, Value Expr",
 	}, []string{

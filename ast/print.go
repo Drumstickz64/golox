@@ -2,6 +2,7 @@ package ast
 
 import (
 	"fmt"
+	"slices"
 )
 
 type Printer struct{}
@@ -41,6 +42,11 @@ func (p Printer) VisitLiteralExpr(expr *LiteralExpr) (any, error) {
 
 func (p Printer) VisitUnaryExpr(expr *UnaryExpr) (any, error) {
 	return p.parenthesize(expr.Operator.Lexeme, expr.Right), nil
+}
+
+func (p Printer) VisitCallExpr(expr *CallExpr) (any, error) {
+	args := slices.Concat([]Expr{expr.Callee}, expr.Arguments)
+	return p.parenthesize("<fn>", args...), nil
 }
 
 func (p Printer) VisitVariableExpr(expr *VariableExpr) (any, error) {

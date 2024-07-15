@@ -107,3 +107,7 @@ for (var b = 1; a < 10000; b = temp + b) {
 // for (;;) {
 //   print "looping...";
 // }
+
+print "---- function test ----";
+print "the current time is:";
+print clock();
