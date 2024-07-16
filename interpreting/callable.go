@@ -2,7 +2,6 @@ package interpreting
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/Drumstickz64/golox/ast"
 	"github.com/Drumstickz64/golox/environment"
@@ -10,7 +9,7 @@ import (
 
 type Callable interface {
 	Arity() int
-	Call(interpreter *Interpreter, arguments []any) any
+	Call(interpreter *Interpreter, arguments []any) (any, error)
 }
 
 type function struct {
@@ -22,19 +21,19 @@ func (f *function) Arity() int {
 	return len(f.declaration.Parameters)
 }
 
-func (f *function) Call(interpreter *Interpreter, arguments []any) any {
+func (f *function) Call(interpreter *Interpreter, arguments []any) (any, error) {
+	defer func() { interpreter.isReturning = false }()
+
 	env := environment.WithEnclosing(f.closure)
 	for i, param := range f.declaration.Parameters {
 		env.Define(param.Lexeme, arguments[i])
 	}
 
 	if err := interpreter.executeBlock(f.declaration.Body, env); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(70)
+		return nil, err
 	}
 
-	interpreter.isReturning = false
-	return interpreter.returnValue
+	return interpreter.returnValue, nil
 }
 
 func (f *function) String() string {
@@ -43,14 +42,14 @@ func (f *function) String() string {
 
 type nativeFunction struct {
 	arity int
-	call  func(interpreter *Interpreter, arguments []any) any
+	call  func(interpreter *Interpreter, arguments []any) (any, error)
 }
 
 func (f *nativeFunction) Arity() int {
 	return f.arity
 }
 
-func (f *nativeFunction) Call(interpreter *Interpreter, arguments []any) any {
+func (f *nativeFunction) Call(interpreter *Interpreter, arguments []any) (any, error) {
 	return f.call(interpreter, arguments)
 }
 

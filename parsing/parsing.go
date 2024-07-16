@@ -121,7 +121,7 @@ func (p *Parser) function(kind string) (*ast.FunctionStmt, *ParseError) {
 		return nil, err
 	}
 
-	if _, err := p.consume(token.LEFT_BRACE, fmt.Sprintf("expected '{' before %s name", kind)); err != nil {
+	if _, err := p.consume(token.LEFT_BRACE, fmt.Sprintf("expected '{' before %s body", kind)); err != nil {
 		return nil, err
 	}
 

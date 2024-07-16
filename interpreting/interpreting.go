@@ -24,8 +24,8 @@ func NewInterpreter() Interpreter {
 
 	globals.Define("clock", &nativeFunction{
 		arity: 0,
-		call: func(interpreter *Interpreter, arguments []any) any {
-			return float64(time.Now().Unix())
+		call: func(interpreter *Interpreter, arguments []any) (any, error) {
+			return float64(time.Now().Unix()), nil
 		},
 	})
 
@@ -78,7 +78,7 @@ func (i *Interpreter) VisitCallExpr(expr *ast.CallExpr) (any, error) {
 		return nil, errors.NewRuntimeError(expr.Paren, fmt.Sprintf("expected %d arguments but got %d instead", callable.Arity(), len(arguments)))
 	}
 
-	return callable.Call(i, arguments), nil
+	return callable.Call(i, arguments)
 }
 
 func (i *Interpreter) VisitUnaryExpr(expr *ast.UnaryExpr) (any, error) {
