@@ -88,10 +88,10 @@ print 1 and false;
 
 print "---- while loop test ----";
 
-var i = 5;
-while (i > 0) {
-  print i;
-  i = i - 1;
+var loopI = 5;
+while (loopI > 0) {
+  print loopI;
+  loopI = loopI - 1;
 }
 
 print "---- for loop test ----";
@@ -141,3 +141,20 @@ for (var i = 0; i < 30; i = i + 1) {
 var end = clock();
 print "fib took:";
 print end - start;
+
+print "-- closure test --";
+fun makeCounter() {
+  var i = 0;
+  fun count() {
+    i = i + 1;
+    print i;
+  }
+
+  return count;
+}
+
+var counter = makeCounter();
+print "should print 1";
+counter(); // "1".
+print "should print 2";
+counter(); // "2".

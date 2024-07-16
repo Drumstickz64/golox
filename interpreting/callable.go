@@ -15,12 +15,7 @@ type Callable interface {
 
 type function struct {
 	declaration *ast.FunctionStmt
-}
-
-func newFunction(declaration *ast.FunctionStmt) *function {
-	return &function{
-		declaration: declaration,
-	}
+	closure     *environment.Environment
 }
 
 func (f *function) Arity() int {
@@ -28,7 +23,7 @@ func (f *function) Arity() int {
 }
 
 func (f *function) Call(interpreter *Interpreter, arguments []any) any {
-	env := environment.WithEnclosing(interpreter.globals)
+	env := environment.WithEnclosing(f.closure)
 	for i, param := range f.declaration.Parameters {
 		env.Define(param.Lexeme, arguments[i])
 	}

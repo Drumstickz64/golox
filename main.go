@@ -39,7 +39,7 @@ func main() {
 func RunFile(path string) {
 	source := LoadSource(path)
 
-	expression, errs := Build(source)
+	statements, errs := Build(source)
 	for _, err := range errs {
 		fmt.Fprintln(os.Stderr, err)
 	}
@@ -48,7 +48,7 @@ func RunFile(path string) {
 		os.Exit(65)
 	}
 
-	if err := Run(expression); err != nil {
+	if err := Run(statements); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(70)
 	}

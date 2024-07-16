@@ -316,7 +316,10 @@ func (i *Interpreter) VisitVarStmt(stmt *ast.VarStmt) (any, error) {
 }
 
 func (i *Interpreter) VisitFunctionStmt(stmt *ast.FunctionStmt) (any, error) {
-	fun := newFunction(stmt)
+	fun := &function{
+		declaration: stmt,
+		closure:     i.env,
+	}
 	i.env.Define(stmt.Name.Lexeme, fun)
 	return nil, nil
 }
