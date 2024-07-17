@@ -42,7 +42,8 @@ func (p *Parser) Parse() ([]ast.Stmt, []error) {
 }
 
 func (p *Parser) declaration() (ast.Stmt, error) {
-	if p.match(token.FUN) {
+	if p.check(token.FUN) && p.checkNext(token.IDENTIFIER) {
+		p.advance()
 		fun, err := p.function("function")
 		if err != nil {
 			p.synchronize()
@@ -81,33 +82,7 @@ func (p *Parser) function(kind string) (*ast.FunctionStmt, error) {
 		return nil, err
 	}
 
-	parameters := []token.Token{}
-	if !p.check(token.RIGHT_PAREN) {
-		for {
-			if len(parameters) >= 255 {
-				fmt.Fprintln(os.Stderr, p.error(p.peek(), "can't have more than 255 parameters"))
-			}
-
-			parameter, err := p.consume(token.IDENTIFIER, "expected parameter name")
-			if err != nil {
-				return nil, err
-			}
-			parameters = append(parameters, parameter)
-			if !p.match(token.COMMA) {
-				break
-			}
-		}
-	}
-
-	if _, err := p.consume(token.RIGHT_PAREN, fmt.Sprintf("expected ')' after %s parameters", kind)); err != nil {
-		return nil, err
-	}
-
-	if _, err := p.consume(token.LEFT_BRACE, fmt.Sprintf("expected '{' before %s body", kind)); err != nil {
-		return nil, err
-	}
-
-	body, err := p.block()
+	parameters, body, err := p.finishFunction(kind)
 	if err != nil {
 		return nil, err
 	}
@@ -117,6 +92,41 @@ func (p *Parser) function(kind string) (*ast.FunctionStmt, error) {
 		Parameters: parameters,
 		Body:       body,
 	}, nil
+}
+
+func (p *Parser) finishFunction(kind string) ([]token.Token, []ast.Stmt, error) {
+	parameters := []token.Token{}
+	if !p.check(token.RIGHT_PAREN) {
+		for {
+			if len(parameters) >= 255 {
+				fmt.Fprintln(os.Stderr, p.error(p.peek(), "can't have more than 255 parameters"))
+			}
+
+			parameter, err := p.consume(token.IDENTIFIER, "expected parameter name")
+			if err != nil {
+				return nil, nil, err
+			}
+			parameters = append(parameters, parameter)
+			if !p.match(token.COMMA) {
+				break
+			}
+		}
+	}
+
+	if _, err := p.consume(token.RIGHT_PAREN, fmt.Sprintf("expected ')' after %s parameters", kind)); err != nil {
+		return nil, nil, err
+	}
+
+	if _, err := p.consume(token.LEFT_BRACE, fmt.Sprintf("expected '{' before %s body", kind)); err != nil {
+		return nil, nil, err
+	}
+
+	body, err := p.block()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return parameters, body, nil
 }
 
 func (p *Parser) varDeclaration() (ast.Stmt, error) {
@@ -643,6 +653,10 @@ func (p *Parser) primary() (ast.Expr, error) {
 		}, nil
 	}
 
+	if p.match(token.FUN) {
+		return p.lambda()
+	}
+
 	if p.match(token.LEFT_PAREN) {
 		expr, err := p.expression()
 		if err != nil {
@@ -658,6 +672,22 @@ func (p *Parser) primary() (ast.Expr, error) {
 	}
 
 	return nil, p.error(p.peek(), "failed to parse expression")
+}
+
+func (p *Parser) lambda() (ast.Expr, error) {
+	if _, err := p.consume(token.LEFT_PAREN, "expected '(' after 'fun' in lambda expression"); err != nil {
+		return nil, err
+	}
+
+	params, body, err := p.finishFunction("lambda")
+	if err != nil {
+		return nil, err
+	}
+
+	return &ast.LambdaExpr{
+		Parameters: params,
+		Body:       body,
+	}, nil
 }
 
 func (p *Parser) match(kinds ...token.Kind) bool {
@@ -679,6 +709,14 @@ func (p *Parser) check(kind token.Kind) bool {
 	return p.peek().Kind == kind
 }
 
+func (p *Parser) checkNext(kind token.Kind) bool {
+	if p.isAtEnd() {
+		return false
+	}
+
+	return p.peekNext().Kind == kind
+}
+
 func (p *Parser) advance() token.Token {
 	if !p.isAtEnd() {
 		p.current++
@@ -691,6 +729,13 @@ func (p *Parser) peek() token.Token {
 	// p.isAtEnd() not needed because EOF is already at the end of tokens
 	// so it would be returned here
 	return p.tokens[p.current]
+}
+
+func (p *Parser) peekNext() token.Token {
+	if p.isAtEnd() {
+		return p.peek()
+	}
+	return p.tokens[p.current+1]
 }
 
 func (p *Parser) previous() token.Token {

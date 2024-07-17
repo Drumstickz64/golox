@@ -215,6 +215,13 @@ func (i *Interpreter) VisitAssignmentExpr(expr *ast.AssignmentExpr) (any, error)
 	return value, nil
 }
 
+func (i Interpreter) VisitLambdaExpr(expr *ast.LambdaExpr) (any, error) {
+	return &lambda{
+		expression: expr,
+		closure:    i.env,
+	}, nil
+}
+
 func (i *Interpreter) VisitPrintStmt(stmt *ast.PrintStmt) (any, error) {
 	value, err := i.evaluate(stmt.Expression)
 	if err != nil {

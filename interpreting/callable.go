@@ -40,6 +40,34 @@ func (f *function) String() string {
 	return fmt.Sprintf("<fn %s>", f.declaration.Name.Lexeme)
 }
 
+type lambda struct {
+	expression *ast.LambdaExpr
+	closure    *environment.Environment
+}
+
+func (f *lambda) Arity() int {
+	return len(f.expression.Parameters)
+}
+
+func (f *lambda) Call(interpreter *Interpreter, arguments []any) (any, error) {
+	defer func() { interpreter.isReturning = false }()
+
+	env := environment.WithEnclosing(f.closure)
+	for i, param := range f.expression.Parameters {
+		env.Define(param.Lexeme, arguments[i])
+	}
+
+	if err := interpreter.executeBlock(f.expression.Body, env); err != nil {
+		return nil, err
+	}
+
+	return interpreter.returnValue, nil
+}
+
+func (f *lambda) String() string {
+	return "<lambda>"
+}
+
 type nativeFunction struct {
 	arity int
 	call  func(interpreter *Interpreter, arguments []any) (any, error)

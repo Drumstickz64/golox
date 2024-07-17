@@ -29,6 +29,7 @@ func main() {
 		"Call     : Callee Expr, Paren token.Token, Arguments []Expr",
 		"Variable : Name token.Token",
 		"Assignment : Name token.Token, Value Expr",
+		"Lambda     : Parameters []token.Token, Body []Stmt",
 	}, []string{
 		"github.com/Drumstickz64/golox/token",
 	})

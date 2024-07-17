@@ -49,6 +49,10 @@ func (p Printer) VisitCallExpr(expr *CallExpr) (any, error) {
 	return p.parenthesize("<fn>", args...), nil
 }
 
+func (p Printer) VisitLambdaExpr(expr *LambdaExpr) (any, error) {
+	return p.parenthesize("<lambda>"), nil
+}
+
 func (p Printer) VisitVariableExpr(expr *VariableExpr) (any, error) {
 	return p.parenthesize("var " + expr.Name.Lexeme), nil
 }
