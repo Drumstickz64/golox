@@ -413,25 +413,25 @@ func (p *Parser) assignment() (ast.Expr, *ParseError) {
 	}
 
 	if p.match(token.EQUAL) {
-		varExpr, isVarExpr := expr.(*ast.VariableExpr)
-		if !isVarExpr {
-			equals := p.previous()
-			return nil, &ParseError{
-				Token:       equals,
-				Message:     "invalid assignment target",
-				ShouldPanic: false,
-			}
-		}
-
+		equals := p.previous()
 		value, err := p.assignment()
 		if err != nil {
 			return nil, err
 		}
 
-		return &ast.AssignmentExpr{
-			Name:  varExpr.Name,
-			Value: value,
-		}, nil
+		varExpr, isVarExpr := expr.(*ast.VariableExpr)
+		if isVarExpr {
+			return &ast.AssignmentExpr{
+				Name:  varExpr.Name,
+				Value: value,
+			}, nil
+		}
+
+		return nil, &ParseError{
+			Token:       equals,
+			Message:     "invalid assignment target",
+			ShouldPanic: false,
+		}
 	}
 
 	return expr, nil
