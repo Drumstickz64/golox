@@ -2,6 +2,7 @@ package parsing
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/Drumstickz64/golox/assert"
 	"github.com/Drumstickz64/golox/ast"
@@ -9,24 +10,12 @@ import (
 	"github.com/Drumstickz64/golox/token"
 )
 
-type ParseError struct {
-	Token       token.Token
-	Message     any
-	ShouldPanic bool
-}
-
-func (e ParseError) Error() string {
-	var where string
-	if e.Token.Kind == token.EOF {
-		where = "at end"
-	} else {
-		where = "at '" + e.Token.Lexeme + "'"
-	}
-
-	return fmt.Sprintf("[on %d:%d] error %v: %v", e.Token.Line, e.Token.Column, where, e.Message)
-}
-
 type Parser struct {
+	// used in case only non panicing errors occured, though it gets set to true even by panicing errors.
+	// panicing errors are returned all the way up to the called to Parser.Parse().
+	// They also cause the parser to synchronize() at the declaration rule.
+	HadError bool
+
 	tokens  []token.Token
 	current int
 }
@@ -37,16 +26,13 @@ func NewParser(tokens []token.Token) Parser {
 	}
 }
 
-func (p *Parser) Parse() ([]ast.Stmt, []errors.BuildError) {
+func (p *Parser) Parse() ([]ast.Stmt, []error) {
 	statements := []ast.Stmt{}
-	errs := []errors.BuildError{}
+	errs := []error{}
 	for !p.isAtEnd() {
 		statement, err := p.declaration()
 		if err != nil {
 			errs = append(errs, err)
-			if err.ShouldPanic {
-				continue
-			}
 		} else {
 			statements = append(statements, statement)
 		}
@@ -55,7 +41,7 @@ func (p *Parser) Parse() ([]ast.Stmt, []errors.BuildError) {
 	return statements, errs
 }
 
-func (p *Parser) declaration() (ast.Stmt, *ParseError) {
+func (p *Parser) declaration() (ast.Stmt, error) {
 	if p.match(token.FUN) {
 		fun, err := p.function("function")
 		if err != nil {
@@ -85,7 +71,7 @@ func (p *Parser) declaration() (ast.Stmt, *ParseError) {
 	return statement, nil
 }
 
-func (p *Parser) function(kind string) (*ast.FunctionStmt, *ParseError) {
+func (p *Parser) function(kind string) (*ast.FunctionStmt, error) {
 	name, err := p.consume(token.IDENTIFIER, fmt.Sprintf("expected %s name", kind))
 	if err != nil {
 		return nil, err
@@ -99,11 +85,7 @@ func (p *Parser) function(kind string) (*ast.FunctionStmt, *ParseError) {
 	if !p.check(token.RIGHT_PAREN) {
 		for {
 			if len(parameters) >= 255 {
-				return nil, &ParseError{
-					Token:       p.peek(),
-					Message:     "can't have more than 255 parameters",
-					ShouldPanic: false,
-				}
+				fmt.Fprintln(os.Stderr, p.error(p.peek(), "can't have more than 255 parameters"))
 			}
 
 			parameter, err := p.consume(token.IDENTIFIER, "expected parameter name")
@@ -137,7 +119,7 @@ func (p *Parser) function(kind string) (*ast.FunctionStmt, *ParseError) {
 	}, nil
 }
 
-func (p *Parser) varDeclaration() (ast.Stmt, *ParseError) {
+func (p *Parser) varDeclaration() (ast.Stmt, error) {
 	name, err := p.consume(token.IDENTIFIER, "expected variable name after 'var'")
 	if err != nil {
 		return nil, err
@@ -161,7 +143,7 @@ func (p *Parser) varDeclaration() (ast.Stmt, *ParseError) {
 	}, nil
 }
 
-func (p *Parser) statement() (ast.Stmt, *ParseError) {
+func (p *Parser) statement() (ast.Stmt, error) {
 	if p.match(token.PRINT) {
 		return p.printStatement()
 	}
@@ -196,7 +178,7 @@ func (p *Parser) statement() (ast.Stmt, *ParseError) {
 	return p.expressionStatement()
 }
 
-func (p *Parser) printStatement() (ast.Stmt, *ParseError) {
+func (p *Parser) printStatement() (ast.Stmt, error) {
 	expression, err := p.expression()
 	if err != nil {
 		return nil, err
@@ -211,11 +193,11 @@ func (p *Parser) printStatement() (ast.Stmt, *ParseError) {
 	}, err
 }
 
-func (p *Parser) returnStatement() (ast.Stmt, *ParseError) {
+func (p *Parser) returnStatement() (ast.Stmt, error) {
 	keyword := p.previous()
 	var valueExpr ast.Expr
 	if !p.check(token.SEMICOLON) {
-		var err *ParseError
+		var err error
 		valueExpr, err = p.expression()
 		if err != nil {
 			return nil, err
@@ -232,8 +214,8 @@ func (p *Parser) returnStatement() (ast.Stmt, *ParseError) {
 	}, nil
 }
 
-func (p *Parser) forStatement() (ast.Stmt, *ParseError) {
-	var err *ParseError
+func (p *Parser) forStatement() (ast.Stmt, error) {
+	var err error
 	if _, err = p.consume(token.LEFT_PAREN, "expected '(' after 'for'"); err != nil {
 		return nil, err
 	}
@@ -310,7 +292,7 @@ func (p *Parser) forStatement() (ast.Stmt, *ParseError) {
 	return body, nil
 }
 
-func (p *Parser) whileStatement() (ast.Stmt, *ParseError) {
+func (p *Parser) whileStatement() (ast.Stmt, error) {
 	if _, err := p.consume(token.LEFT_PAREN, "expected '(' after 'while'"); err != nil {
 		return nil, err
 	}
@@ -335,7 +317,7 @@ func (p *Parser) whileStatement() (ast.Stmt, *ParseError) {
 	}, nil
 }
 
-func (p *Parser) ifStatement() (ast.Stmt, *ParseError) {
+func (p *Parser) ifStatement() (ast.Stmt, error) {
 	if _, err := p.consume(token.LEFT_PAREN, "expected '(' after 'if'"); err != nil {
 		return nil, err
 	}
@@ -369,7 +351,7 @@ func (p *Parser) ifStatement() (ast.Stmt, *ParseError) {
 	}, nil
 }
 
-func (p *Parser) expressionStatement() (ast.Stmt, *ParseError) {
+func (p *Parser) expressionStatement() (ast.Stmt, error) {
 	expression, err := p.expression()
 	if err != nil {
 		return nil, err
@@ -384,7 +366,7 @@ func (p *Parser) expressionStatement() (ast.Stmt, *ParseError) {
 	}, err
 }
 
-func (p *Parser) block() ([]ast.Stmt, *ParseError) {
+func (p *Parser) block() ([]ast.Stmt, error) {
 	statements := []ast.Stmt{}
 	for !p.check(token.RIGHT_BRACE) && !p.isAtEnd() {
 		statement, err := p.declaration()
@@ -402,11 +384,11 @@ func (p *Parser) block() ([]ast.Stmt, *ParseError) {
 	return statements, nil
 }
 
-func (p *Parser) expression() (ast.Expr, *ParseError) {
+func (p *Parser) expression() (ast.Expr, error) {
 	return p.assignment()
 }
 
-func (p *Parser) assignment() (ast.Expr, *ParseError) {
+func (p *Parser) assignment() (ast.Expr, error) {
 	expr, err := p.logical_or()
 	if err != nil {
 		return nil, err
@@ -427,17 +409,13 @@ func (p *Parser) assignment() (ast.Expr, *ParseError) {
 			}, nil
 		}
 
-		return nil, &ParseError{
-			Token:       equals,
-			Message:     "invalid assignment target",
-			ShouldPanic: false,
-		}
+		fmt.Fprintln(os.Stderr, p.error(equals, "invalid assignment target"))
 	}
 
 	return expr, nil
 }
 
-func (p *Parser) logical_or() (ast.Expr, *ParseError) {
+func (p *Parser) logical_or() (ast.Expr, error) {
 	expr, err := p.logical_and()
 	if err != nil {
 		return nil, err
@@ -460,7 +438,7 @@ func (p *Parser) logical_or() (ast.Expr, *ParseError) {
 	return expr, nil
 }
 
-func (p *Parser) logical_and() (ast.Expr, *ParseError) {
+func (p *Parser) logical_and() (ast.Expr, error) {
 	expr, err := p.equality()
 	if err != nil {
 		return nil, err
@@ -483,7 +461,7 @@ func (p *Parser) logical_and() (ast.Expr, *ParseError) {
 	return expr, nil
 }
 
-func (p *Parser) equality() (ast.Expr, *ParseError) {
+func (p *Parser) equality() (ast.Expr, error) {
 	expr, err := p.comparison()
 	if err != nil {
 		return nil, err
@@ -506,7 +484,7 @@ func (p *Parser) equality() (ast.Expr, *ParseError) {
 	return expr, nil
 }
 
-func (p *Parser) comparison() (ast.Expr, *ParseError) {
+func (p *Parser) comparison() (ast.Expr, error) {
 	expr, err := p.term()
 	if err != nil {
 		return nil, err
@@ -529,7 +507,7 @@ func (p *Parser) comparison() (ast.Expr, *ParseError) {
 	return expr, nil
 }
 
-func (p *Parser) term() (ast.Expr, *ParseError) {
+func (p *Parser) term() (ast.Expr, error) {
 	expr, err := p.factor()
 	if err != nil {
 		return nil, err
@@ -552,7 +530,7 @@ func (p *Parser) term() (ast.Expr, *ParseError) {
 	return expr, nil
 }
 
-func (p *Parser) factor() (ast.Expr, *ParseError) {
+func (p *Parser) factor() (ast.Expr, error) {
 	expr, err := p.unary()
 	if err != nil {
 		return nil, err
@@ -575,7 +553,7 @@ func (p *Parser) factor() (ast.Expr, *ParseError) {
 	return expr, nil
 }
 
-func (p *Parser) unary() (ast.Expr, *ParseError) {
+func (p *Parser) unary() (ast.Expr, error) {
 	if p.match(token.MINUS, token.BANG) {
 		operator := p.previous()
 		right, err := p.unary()
@@ -594,7 +572,7 @@ func (p *Parser) unary() (ast.Expr, *ParseError) {
 	return p.call()
 }
 
-func (p *Parser) call() (ast.Expr, *ParseError) {
+func (p *Parser) call() (ast.Expr, error) {
 	expr, err := p.primary()
 	if err != nil {
 		return nil, err
@@ -614,7 +592,7 @@ func (p *Parser) call() (ast.Expr, *ParseError) {
 	return expr, nil
 }
 
-func (p *Parser) finishCall(callee ast.Expr) (ast.Expr, *ParseError) {
+func (p *Parser) finishCall(callee ast.Expr) (ast.Expr, error) {
 	arguments := []ast.Expr{}
 	if !p.check(token.RIGHT_PAREN) {
 		for {
@@ -642,7 +620,7 @@ func (p *Parser) finishCall(callee ast.Expr) (ast.Expr, *ParseError) {
 	}, nil
 }
 
-func (p *Parser) primary() (ast.Expr, *ParseError) {
+func (p *Parser) primary() (ast.Expr, error) {
 	if p.match(token.TRUE) {
 		return &ast.LiteralExpr{Value: true}, nil
 	}
@@ -679,11 +657,7 @@ func (p *Parser) primary() (ast.Expr, *ParseError) {
 		return &ast.GroupingExpr{Expression: expr}, nil
 	}
 
-	return nil, &ParseError{
-		Token:       p.peek(),
-		Message:     "failed to parse expression",
-		ShouldPanic: true,
-	}
+	return nil, p.error(p.peek(), "failed to parse expression")
 }
 
 func (p *Parser) match(kinds ...token.Kind) bool {
@@ -728,13 +702,9 @@ func (p *Parser) isAtEnd() bool {
 	return p.peek().Kind == token.EOF
 }
 
-func (p *Parser) consume(kind token.Kind, msg string) (token.Token, *ParseError) {
+func (p *Parser) consume(kind token.Kind, msg string) (token.Token, error) {
 	if !p.check(kind) {
-		return token.Token{}, &ParseError{
-			Token:       p.peek(),
-			Message:     msg,
-			ShouldPanic: true,
-		}
+		return token.Token{}, p.error(p.peek(), msg)
 	}
 
 	return p.advance(), nil
@@ -755,4 +725,13 @@ func (p *Parser) synchronize() {
 
 		p.advance()
 	}
+}
+
+func (p *Parser) error(tok token.Token, msg any) error {
+	p.HadError = true
+	if tok.Kind == token.EOF {
+		return errors.NewBuildtimeError(tok.Line, tok.Column, " at end", msg)
+	}
+
+	return errors.NewBuildtimeError(tok.Line, tok.Column, " at '"+tok.Lexeme+"'", msg)
 }

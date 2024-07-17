@@ -9,15 +9,6 @@ import (
 	"github.com/Drumstickz64/golox/token"
 )
 
-type ScanError struct {
-	Line, Column int
-	Message      any
-}
-
-func (e ScanError) Error() string {
-	return fmt.Sprintf("[on %d:%d] error: %v", e.Line, e.Column, e.Message)
-}
-
 type Scanner struct {
 	source          string
 	tokens          []token.Token
@@ -32,8 +23,8 @@ func NewScanner(source string) Scanner {
 	}
 }
 
-func (s *Scanner) ScanTokens() ([]token.Token, []errors.BuildError) {
-	errs := []errors.BuildError{}
+func (s *Scanner) ScanTokens() ([]token.Token, []error) {
+	errs := []error{}
 	for !s.isAtEnd() {
 		s.start = s.current
 		if err := s.scanToken(); err != nil {
@@ -52,7 +43,7 @@ func (s *Scanner) ScanTokens() ([]token.Token, []errors.BuildError) {
 	return s.tokens, errs
 }
 
-func (s *Scanner) scanToken() *ScanError {
+func (s *Scanner) scanToken() error {
 	char := s.advance()
 	switch char {
 	case '(':
@@ -107,7 +98,7 @@ func (s *Scanner) scanToken() *ScanError {
 		} else if isAlpha(char) {
 			s.addIdentifierToken()
 		} else {
-			return s.newError(fmt.Sprintf("found unexpected character '%v'", string(char)))
+			return s.error(fmt.Sprintf("found unexpected character '%v'", string(char)))
 		}
 	}
 
@@ -169,7 +160,7 @@ func (s *Scanner) addCompoundToken(completingChar rune, compound, simple token.K
 
 }
 
-func (s *Scanner) addStringToken() *ScanError {
+func (s *Scanner) addStringToken() error {
 	for s.peek() != '"' && !s.isAtEnd() {
 		if s.peek() == '\n' {
 			s.line++
@@ -180,7 +171,7 @@ func (s *Scanner) addStringToken() *ScanError {
 	}
 
 	if s.isAtEnd() {
-		return s.newError("Unterminated string")
+		return s.error("Unterminated string")
 	}
 
 	// consume last "
@@ -248,7 +239,7 @@ func (s *Scanner) dropLine() {
 	}
 }
 
-func (s *Scanner) ignoreMultilineComment() *ScanError {
+func (s *Scanner) ignoreMultilineComment() error {
 	for !(s.peek() == '*' && s.peekNext() == '/') && !s.isAtEnd() {
 		if s.peek() == '\n' {
 			s.line++
@@ -259,7 +250,7 @@ func (s *Scanner) ignoreMultilineComment() *ScanError {
 	}
 
 	if s.isAtEnd() {
-		return s.newError("Unterminated multi-line comment, expected '*/'")
+		return s.error("Unterminated multi-line comment, expected '*/'")
 	}
 
 	// consume the closing */
@@ -269,12 +260,9 @@ func (s *Scanner) ignoreMultilineComment() *ScanError {
 	return nil
 }
 
-func (s *Scanner) newError(message any) *ScanError {
-	return &ScanError{
-		Line:    s.line,
-		Column:  s.currentColumn(),
-		Message: message,
-	}
+func (s *Scanner) error(msg any) error {
+	return errors.NewBuildtimeError(s.line, s.currentColumn(), "", msg)
+
 }
 
 func (s *Scanner) currentColumn() int {

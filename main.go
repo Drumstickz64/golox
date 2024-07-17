@@ -96,7 +96,7 @@ PromptLoop:
 	}
 }
 
-func Build(source string) ([]ast.Stmt, []errors.BuildError) {
+func Build(source string) ([]ast.Stmt, []error) {
 	scanner := scanning.NewScanner(source)
 	tokens, errs := scanner.ScanTokens()
 	if len(errs) > 0 {
@@ -105,7 +105,7 @@ func Build(source string) ([]ast.Stmt, []errors.BuildError) {
 	parser := parsing.NewParser(tokens)
 	statements, errs := parser.Parse()
 
-	if len(errs) > 0 {
+	if len(errs) > 0 || parser.HadError {
 		return nil, errs
 	}
 

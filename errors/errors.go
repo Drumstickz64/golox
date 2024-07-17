@@ -17,8 +17,8 @@ func LogUsageMessage() {
 	os.Exit(64)
 }
 
-type BuildError interface {
-	Error() string
+func NewBuildtimeError(line, column int, where string, msg any) error {
+	return fmt.Errorf("[line %d] Error%v: %v", line, where, msg)
 }
 
 func NewRuntimeError(tok token.Token, msg any) error {
