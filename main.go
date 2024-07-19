@@ -39,6 +39,8 @@ func main() {
 
 func RunFile(path string) {
 	source := LoadSource(path)
+	interpreter := interpreting.NewInterpreter()
+	resolver := resolving.NewResolver(interpreter)
 
 	statements, errs := Build(source)
 	for _, err := range errs {
@@ -49,7 +51,7 @@ func RunFile(path string) {
 		os.Exit(65)
 	}
 
-	if err := Run(statements); err != nil {
+	if err := Run(resolver, interpreter, statements); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(70)
 	}
@@ -66,6 +68,8 @@ func LoadSource(path string) string {
 
 func RunPrompt() {
 	reader := bufio.NewReader(os.Stdin)
+	interpreter := interpreting.NewInterpreter()
+	resolver := resolving.NewResolver(interpreter)
 
 PromptLoop:
 	for {
@@ -91,7 +95,7 @@ PromptLoop:
 			continue PromptLoop
 		}
 
-		if err := Run(statements); err != nil {
+		if err := Run(resolver, interpreter, statements); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 		}
 	}
@@ -113,9 +117,7 @@ func Build(source string) ([]ast.Stmt, []error) {
 	return statements, errs
 }
 
-func Run(statements []ast.Stmt) error {
-	interpreter := interpreting.NewInterpreter()
-	resolver := resolving.NewResolver(&interpreter)
+func Run(resolver *resolving.Resolver, interpreter *interpreting.Interpreter, statements []ast.Stmt) error {
 	if hadError := resolver.Resolve(statements); hadError {
 		return nil
 	}

@@ -24,7 +24,7 @@ type Interpreter struct {
 	returnValue any
 }
 
-func NewInterpreter() Interpreter {
+func NewInterpreter() *Interpreter {
 	globals := environment.New()
 
 	globals.Define("clock", &nativeFunction{
@@ -34,7 +34,7 @@ func NewInterpreter() Interpreter {
 		},
 	})
 
-	return Interpreter{
+	return &Interpreter{
 		globals: globals,
 		env:     globals,
 		locals:  map[exprId]int{},
