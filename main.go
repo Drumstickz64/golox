@@ -12,6 +12,7 @@ import (
 	"github.com/Drumstickz64/golox/errors"
 	"github.com/Drumstickz64/golox/interpreting"
 	"github.com/Drumstickz64/golox/parsing"
+	"github.com/Drumstickz64/golox/resolving"
 	"github.com/Drumstickz64/golox/scanning"
 )
 
@@ -114,6 +115,11 @@ func Build(source string) ([]ast.Stmt, []error) {
 
 func Run(statements []ast.Stmt) error {
 	interpreter := interpreting.NewInterpreter()
+	resolver := resolving.NewResolver(&interpreter)
+	if hadError := resolver.Resolve(statements); hadError {
+		return nil
+	}
+
 	return interpreter.Interpret(statements)
 }
 

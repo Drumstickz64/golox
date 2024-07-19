@@ -12,9 +12,14 @@ import (
 	"github.com/Drumstickz64/golox/token"
 )
 
+// used for storing AST nodes in maps because maps compare keys by value, but we need
+// identical objects to be unique
+type exprId string
+
 type Interpreter struct {
 	globals     *environment.Environment
 	env         *environment.Environment
+	locals      map[exprId]int
 	isReturning bool
 	returnValue any
 }
@@ -32,6 +37,7 @@ func NewInterpreter() Interpreter {
 	return Interpreter{
 		globals: globals,
 		env:     globals,
+		locals:  map[exprId]int{},
 	}
 }
 
@@ -98,7 +104,8 @@ func (i *Interpreter) VisitUnaryExpr(expr *ast.UnaryExpr) (any, error) {
 		return !isTruthy(right), nil
 	}
 
-	return assert.Unreachable(fmt.Sprintf("'%v' is a valid unary operator", expr.Operator.Kind)), nil
+	assert.Unreachable(fmt.Sprintf("'%v' is a valid unary operator", expr.Operator.Kind))
+	return nil, nil
 }
 
 func (i *Interpreter) VisitBinaryExpr(expr *ast.BinaryExpr) (any, error) {
@@ -174,7 +181,8 @@ func (i *Interpreter) VisitBinaryExpr(expr *ast.BinaryExpr) (any, error) {
 		return left != right, nil
 	}
 
-	return assert.Unreachable(fmt.Sprintf("'%v' is a valid binary operator", expr.Operator.Kind)), nil
+	assert.Unreachable(fmt.Sprintf("'%v' is a valid binary operator", expr.Operator.Kind))
+	return nil, nil
 }
 
 func (i *Interpreter) VisitLogicalExpr(expr *ast.LogicalExpr) (any, error) {
@@ -199,7 +207,16 @@ func (i *Interpreter) VisitLogicalExpr(expr *ast.LogicalExpr) (any, error) {
 }
 
 func (i *Interpreter) VisitVariableExpr(expr *ast.VariableExpr) (any, error) {
-	return i.env.Get(expr.Name)
+	return i.lookupVariable(expr.Name, expr)
+}
+
+func (i Interpreter) lookupVariable(name token.Token, expr ast.Expr) (any, error) {
+	distance, ok := i.locals[makeExprId(expr)]
+	if !ok {
+		return i.globals.Get(name)
+	}
+
+	return i.env.GetAt(distance, name.Lexeme), nil
 }
 
 func (i *Interpreter) VisitAssignmentExpr(expr *ast.AssignmentExpr) (any, error) {
@@ -208,8 +225,13 @@ func (i *Interpreter) VisitAssignmentExpr(expr *ast.AssignmentExpr) (any, error)
 		return nil, err
 	}
 
-	if err := i.env.Assign(expr.Name, value); err != nil {
-		return nil, err
+	distance, ok := i.locals[makeExprId(expr)]
+	if ok {
+		i.env.AssignAt(distance, expr.Name, value)
+	} else {
+		if err := i.globals.Assign(expr.Name, value); err != nil {
+			return nil, err
+		}
 	}
 
 	return value, nil
@@ -365,6 +387,11 @@ func (i *Interpreter) execute(stmt ast.Stmt) error {
 	return err
 }
 
+func (i *Interpreter) Resolve(expr ast.Expr, depth int) {
+	id := makeExprId(expr)
+	i.locals[id] = depth
+}
+
 func (i *Interpreter) evaluate(expr ast.Expr) (any, error) {
 	return expr.Accept(i)
 }
@@ -403,4 +430,8 @@ func isString(value any) bool {
 	}
 
 	return reflect.TypeOf(value).Kind() == reflect.String
+}
+
+func makeExprId(expr ast.Expr) exprId {
+	return exprId(fmt.Sprintf("%p", expr))
 }

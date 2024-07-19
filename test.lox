@@ -50,8 +50,8 @@ print c;
 
 var d = 1;
 {
-  var d = d + 2;
-  print d;
+  var dd = d + 2;
+  print dd;
 }
 
 var apples = 10;

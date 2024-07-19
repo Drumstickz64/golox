@@ -4,46 +4,46 @@ import (
 	"fmt"
 )
 
-func That(condition bool, msg any) any {
+func That(condition bool, msg any) {
 	if !condition {
 		panic(fmt.Sprintf("ASSERTION FAILED: %s", msg))
 	}
 
-	return nil
+	// return nil
 }
 
-func Eq[T comparable](left, right T) any {
+func Eq[T comparable](left, right T) {
 	if left != right {
 		panic(fmt.Sprintf("ASSERTION FAILED: '%v' == '%v'", left, right))
 	}
 
-	return nil
+	// return nil
 }
 
-func EqWithMessage[T comparable](left, right T, msg any) any {
+func EqWithMessage[T comparable](left, right T, msg any) {
 	if left != right {
 		panic(fmt.Sprintf("ASSERTION FAILED: '%v' == '%v': %s", left, right, msg))
 	}
 
-	return nil
+	// return nil
 }
 
-func NotEq[T comparable](left, right T) any {
+func NotEq[T comparable](left, right T) {
 	if left == right {
 		panic(fmt.Sprintf("ASSERTION FAILED: '%v' != '%v'", left, right))
 	}
 
-	return nil
+	// return nil
 }
 
-func NotEqWithMessage[T comparable](left, right T, msg any) any {
+func NotEqWithMessage[T comparable](left, right T, msg any) {
 	if left == right {
 		panic(fmt.Sprintf("ASSERTION FAILED: '%v' != '%v': %s", left, right, msg))
 	}
 
-	return nil
+	// return nil
 }
 
-func Unreachable(msg any) any {
+func Unreachable(msg any) {
 	panic(fmt.Sprintf("ASSERTION FAILED: code is unreachable: %s", msg))
 }
