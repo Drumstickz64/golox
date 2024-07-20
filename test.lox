@@ -177,3 +177,12 @@ print bagel; // Prints "<instance of class Bagel>".
 
 bagel.size = "large";
 print bagel.size;
+
+class Bacon {
+  eat() {
+    print "Crunch crunch crunch!";
+  }
+}
+
+Bacon().eat(); // Prints "Crunch crunch crunch!".
+// Bacon().doesNotExist(); // invalid

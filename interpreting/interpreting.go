@@ -359,7 +359,21 @@ func (i *Interpreter) VisitBlockStmt(stmt *ast.BlockStmt) (any, error) {
 
 func (i *Interpreter) VisitClassStmt(stmt *ast.ClassStmt) (any, error) {
 	i.env.Define(stmt.Name.Lexeme, nil)
-	class := NewClass(stmt.Name.Lexeme)
+
+	methods := map[string]*function{}
+	for _, method := range stmt.Methods {
+		fun := &function{
+			declaration: method,
+			closure:     i.env,
+		}
+		methods[method.Name.Lexeme] = fun
+	}
+
+	class := &class{
+		Name:    stmt.Name.Lexeme,
+		Methods: methods,
+	}
+
 	i.env.Assign(stmt.Name, class)
 
 	return nil, nil

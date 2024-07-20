@@ -8,13 +8,8 @@ import (
 )
 
 type class struct {
-	Name string
-}
-
-func NewClass(name string) *class {
-	return &class{
-		Name: name,
-	}
+	Name    string
+	Methods map[string]*function
 }
 
 func (c *class) Call(interpreter *Interpreter, arguments []any) (any, error) {
@@ -45,15 +40,29 @@ func NewInstance(class *class) *Instance {
 
 func (i *Instance) Get(name token.Token) (any, error) {
 	value, ok := i.Fields[name.Lexeme]
-	if !ok {
-		return nil, errors.NewRuntimeError(name, "undefined property "+name.Lexeme)
+	if ok {
+		return value, nil
 	}
 
-	return value, nil
+	method, ok := i.findMethod(name.Lexeme)
+	if ok {
+		return method, nil
+	}
+
+	return nil, errors.NewRuntimeError(name, fmt.Sprintf("undefined property '%s'", name.Lexeme))
 }
 
 func (i *Instance) Set(name token.Token, value any) {
 	i.Fields[name.Lexeme] = value
+}
+
+func (i *Instance) findMethod(name string) (*function, bool) {
+	method, ok := i.Class.Methods[name]
+	if ok {
+		return method, true
+	}
+
+	return nil, false
 }
 
 func (i *Instance) String() string {
