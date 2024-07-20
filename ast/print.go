@@ -60,6 +60,10 @@ func (p Printer) VisitSetExpr(expr *SetExpr) (any, error) {
 	return fmt.Sprintf("(.= %s %s %s)", objectStr, expr.Name, valueStr), nil
 }
 
+func (p Printer) VisitThisExpr(expr *ThisExpr) (any, error) {
+	return "(this)", nil
+}
+
 func (p Printer) VisitVariableExpr(expr *VariableExpr) (any, error) {
 	return p.parenthesize("var " + expr.Name.Lexeme), nil
 }

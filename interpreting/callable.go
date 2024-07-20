@@ -40,6 +40,15 @@ func (f *function) String() string {
 	return fmt.Sprintf("<fn %s>", f.declaration.Name.Lexeme)
 }
 
+func (f *function) bind(this *Instance) *function {
+	env := environment.WithEnclosing(f.closure)
+	env.Define("this", this)
+	return &function{
+		declaration: f.declaration,
+		closure:     env,
+	}
+}
+
 type nativeFunction struct {
 	arity int
 	call  func(interpreter *Interpreter, arguments []any) (any, error)

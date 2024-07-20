@@ -18,10 +18,18 @@ const (
 	FUNCTION_TYPE_METHOD
 )
 
+type classType int
+
+const (
+	CLASS_TYPE_NONE classType = iota
+	CLASS_TYPE_CLASS
+)
+
 type Resolver struct {
 	interpreter  *interpreting.Interpreter
 	scopes       []map[string]bool
 	currFunction functionType
+	currClass    classType
 	hadError     bool
 }
 
@@ -46,8 +54,16 @@ func (r *Resolver) VisitBlockStmt(stmt *ast.BlockStmt) (any, error) {
 }
 
 func (r *Resolver) VisitClassStmt(stmt *ast.ClassStmt) (any, error) {
+	enclosingClass := r.currClass
+	r.currClass = CLASS_TYPE_CLASS
+	defer func() { r.currClass = enclosingClass }()
+
 	r.declare(stmt.Name)
 	r.define(stmt.Name)
+
+	r.beginScope()
+	defer r.endScope()
+	r.scopes[len(r.scopes)-1]["this"] = true
 
 	for _, method := range stmt.Methods {
 		declaration := FUNCTION_TYPE_METHOD
@@ -160,6 +176,16 @@ func (r *Resolver) VisitGetExpr(expr *ast.GetExpr) (any, error) {
 func (r *Resolver) VisitSetExpr(expr *ast.SetExpr) (any, error) {
 	r.resolveExpr(expr.Value)
 	r.resolveExpr(expr.Object)
+	return nil, nil
+}
+
+func (r *Resolver) VisitThisExpr(expr *ast.ThisExpr) (any, error) {
+	if r.currClass == CLASS_TYPE_NONE {
+		r.reportError(expr.Keyword, "can't use 'this' outside of a class")
+		return nil, nil
+	}
+
+	r.resolveLocal(expr, expr.Keyword)
 	return nil, nil
 }
 

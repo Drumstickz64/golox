@@ -26,6 +26,15 @@ func (c *class) String() string {
 	return fmt.Sprintf("<class %s>", c.Name)
 }
 
+func (c *class) findMethod(name string) (*function, bool) {
+	method, ok := c.Methods[name]
+	if ok {
+		return method, true
+	}
+
+	return nil, false
+}
+
 type Instance struct {
 	Class  *class
 	Fields map[string]any
@@ -44,9 +53,9 @@ func (i *Instance) Get(name token.Token) (any, error) {
 		return value, nil
 	}
 
-	method, ok := i.findMethod(name.Lexeme)
+	method, ok := i.Class.findMethod(name.Lexeme)
 	if ok {
-		return method, nil
+		return method.bind(i), nil
 	}
 
 	return nil, errors.NewRuntimeError(name, fmt.Sprintf("undefined property '%s'", name.Lexeme))
@@ -54,15 +63,6 @@ func (i *Instance) Get(name token.Token) (any, error) {
 
 func (i *Instance) Set(name token.Token, value any) {
 	i.Fields[name.Lexeme] = value
-}
-
-func (i *Instance) findMethod(name string) (*function, bool) {
-	method, ok := i.Class.Methods[name]
-	if ok {
-		return method, true
-	}
-
-	return nil, false
 }
 
 func (i *Instance) String() string {

@@ -690,6 +690,10 @@ func (p *Parser) primary() (ast.Expr, error) {
 		return &ast.LiteralExpr{Value: nil}, nil
 	}
 
+	if p.match(token.THIS) {
+		return &ast.ThisExpr{Keyword: p.previous()}, nil
+	}
+
 	if p.match(token.STRING, token.NUMBER) {
 		return &ast.LiteralExpr{Value: p.previous().Literal}, nil
 	}

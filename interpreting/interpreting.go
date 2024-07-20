@@ -122,6 +122,10 @@ func (i *Interpreter) VisitSetExpr(expr *ast.SetExpr) (any, error) {
 	return value, nil
 }
 
+func (i *Interpreter) VisitThisExpr(expr *ast.ThisExpr) (any, error) {
+	return i.lookupVariable(expr.Keyword, expr)
+}
+
 func (i *Interpreter) VisitUnaryExpr(expr *ast.UnaryExpr) (any, error) {
 	right, err := i.evaluate(expr.Right)
 	if err != nil {
