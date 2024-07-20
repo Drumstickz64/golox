@@ -44,6 +44,13 @@ func (r *Resolver) VisitBlockStmt(stmt *ast.BlockStmt) (any, error) {
 	return nil, nil
 }
 
+func (r *Resolver) VisitClassStmt(stmt *ast.ClassStmt) (any, error) {
+	r.declare(stmt.Name)
+	r.define(stmt.Name)
+
+	return nil, nil
+}
+
 func (r *Resolver) VisitExpressionStmt(stmt *ast.ExpressionStmt) (any, error) {
 	r.resolveExpr(stmt.Expression)
 	return nil, nil
@@ -136,6 +143,17 @@ func (r *Resolver) VisitCallExpr(expr *ast.CallExpr) (any, error) {
 		r.resolveExpr(arg)
 	}
 
+	return nil, nil
+}
+
+func (r *Resolver) VisitGetExpr(expr *ast.GetExpr) (any, error) {
+	r.resolveExpr(expr.Object)
+	return nil, nil
+}
+
+func (r *Resolver) VisitSetExpr(expr *ast.SetExpr) (any, error) {
+	r.resolveExpr(expr.Value)
+	r.resolveExpr(expr.Object)
 	return nil, nil
 }
 

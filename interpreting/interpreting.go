@@ -87,6 +87,41 @@ func (i *Interpreter) VisitCallExpr(expr *ast.CallExpr) (any, error) {
 	return callable.Call(i, arguments)
 }
 
+func (i *Interpreter) VisitGetExpr(expr *ast.GetExpr) (any, error) {
+	object, err := i.evaluate(expr.Object)
+	if err != nil {
+		return nil, err
+	}
+
+	instance, ok := object.(*Instance)
+	if !ok {
+		return nil, errors.NewRuntimeError(expr.Name, "only instances can have properties")
+	}
+
+	return instance.Get(expr.Name)
+}
+
+func (i *Interpreter) VisitSetExpr(expr *ast.SetExpr) (any, error) {
+	object, err := i.evaluate(expr.Object)
+	if err != nil {
+		return nil, err
+	}
+
+	instance, ok := object.(*Instance)
+	if !ok {
+		return nil, errors.NewRuntimeError(expr.Name, "only instances can have fields")
+	}
+
+	value, err := i.evaluate(expr.Value)
+	if err != nil {
+		return nil, err
+	}
+
+	instance.Set(expr.Name, value)
+
+	return value, nil
+}
+
 func (i *Interpreter) VisitUnaryExpr(expr *ast.UnaryExpr) (any, error) {
 	right, err := i.evaluate(expr.Right)
 	if err != nil {
@@ -318,6 +353,14 @@ func (i *Interpreter) VisitBlockStmt(stmt *ast.BlockStmt) (any, error) {
 	if err := i.executeBlock(stmt.Statements, environment.WithEnclosing(i.env)); err != nil {
 		return nil, err
 	}
+
+	return nil, nil
+}
+
+func (i *Interpreter) VisitClassStmt(stmt *ast.ClassStmt) (any, error) {
+	i.env.Define(stmt.Name.Lexeme, nil)
+	class := NewClass(stmt.Name.Lexeme)
+	i.env.Assign(stmt.Name, class)
 
 	return nil, nil
 }

@@ -21,13 +21,15 @@ func main() {
 
 	outputDir := os.Args[1]
 	err := defineAst(outputDir, "Expr", []string{
-		"Binary   : Left Expr, Operator token.Token, Right Expr",
-		"Logical  : Left Expr, Operator token.Token, Right Expr",
-		"Grouping : Expression Expr",
-		"Literal  : Value any",
-		"Unary    : Operator token.Token, Right Expr",
-		"Call     : Callee Expr, Paren token.Token, Arguments []Expr",
-		"Variable : Name token.Token",
+		"Binary     : Left Expr, Operator token.Token, Right Expr",
+		"Logical    : Left Expr, Operator token.Token, Right Expr",
+		"Grouping   : Expression Expr",
+		"Literal    : Value any",
+		"Unary      : Operator token.Token, Right Expr",
+		"Call       : Callee Expr, Paren token.Token, Arguments []Expr",
+		"Get        : Object Expr, Name token.Token",
+		"Set        : Object Expr, Name token.Token, Value Expr",
+		"Variable   : Name token.Token",
 		"Assignment : Name token.Token, Value Expr",
 	}, []string{
 		"github.com/Drumstickz64/golox/token",
@@ -39,6 +41,7 @@ func main() {
 
 	err = defineAst(outputDir, "Stmt", []string{
 		"Block      : Statements []Stmt",
+		"Class      : Name token.Token, Methods []*FunctionStmt",
 		"Expression : Expression Expr",
 		"While      : Condition Expr, Body Stmt",
 		"If         : Condition Expr, ThenBranch Stmt, ElseBranch Stmt",

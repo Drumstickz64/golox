@@ -49,6 +49,17 @@ func (p Printer) VisitCallExpr(expr *CallExpr) (any, error) {
 	return p.parenthesize("<fn>", args...), nil
 }
 
+func (p Printer) VisitGetExpr(expr *GetExpr) (any, error) {
+	objectStr, _ := expr.Object.Accept(p)
+	return fmt.Sprintf("(. %s %s)", objectStr, expr.Name), nil
+}
+
+func (p Printer) VisitSetExpr(expr *SetExpr) (any, error) {
+	objectStr, _ := expr.Object.Accept(p)
+	valueStr, _ := expr.Value.Accept(p)
+	return fmt.Sprintf("(.= %s %s %s)", objectStr, expr.Name, valueStr), nil
+}
+
 func (p Printer) VisitVariableExpr(expr *VariableExpr) (any, error) {
 	return p.parenthesize("var " + expr.Name.Lexeme), nil
 }

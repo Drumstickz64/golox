@@ -11,6 +11,8 @@ type ExprVisitor interface {
 	VisitLiteralExpr(*LiteralExpr) (any, error)
 	VisitUnaryExpr(*UnaryExpr) (any, error)
 	VisitCallExpr(*CallExpr) (any, error)
+	VisitGetExpr(*GetExpr) (any, error)
+	VisitSetExpr(*SetExpr) (any, error)
 	VisitVariableExpr(*VariableExpr) (any, error)
 	VisitAssignmentExpr(*AssignmentExpr) (any, error)
 }
@@ -72,6 +74,25 @@ type CallExpr struct {
 
 func (c *CallExpr) Accept(visitor ExprVisitor) (any, error) {
 	return visitor.VisitCallExpr(c)
+}
+
+type GetExpr struct {
+	Object Expr
+	Name   token.Token
+}
+
+func (g *GetExpr) Accept(visitor ExprVisitor) (any, error) {
+	return visitor.VisitGetExpr(g)
+}
+
+type SetExpr struct {
+	Object Expr
+	Name   token.Token
+	Value  Expr
+}
+
+func (s *SetExpr) Accept(visitor ExprVisitor) (any, error) {
+	return visitor.VisitSetExpr(s)
 }
 
 type VariableExpr struct {

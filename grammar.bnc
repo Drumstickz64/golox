@@ -1,56 +1,59 @@
-program        -> declaration* EOF ;
+program          -> declaration* EOF ;
 
-declaration    -> funDeclaration
-                | varDeclaration
-                | statement ;
+declaration      -> classDeclaration
+                  | funDeclaration
+                  | varDeclaration
+                  | statement ;
 
-funDeclaration -> "fun" function ;
-function       -> IDENTIFIER "(" parameters? ")" block ;
-parameters     -> IDENTIFIER ( "," IDENTIFIER )* ;
+classDeclaration -> "class" IDENTIFIER "{ *function "}" ;
 
-varDeclaration -> "var" IDENTIFIER ( "=" expression )? ";" ;
+funDeclaration   -> "fun" function ;
+function         -> IDENTIFIER "(" parameters? ")" block ;
+parameters       -> IDENTIFIER ( "," IDENTIFIER )* ;
 
-statement      -> exprStmt
-                | ifStmt
-                | printStmt
-                | returnStmt
-                | whileStmt
-                | forStmt
-                | block ;
+varDeclaration   -> "var" IDENTIFIER ( "=" expression )? ";" ;
 
-block          -> "{" declaration* "}" ;
+statement        -> exprStmt
+                  | ifStmt
+                  | printStmt
+                  | returnStmt
+                  | whileStmt
+                  | forStmt
+                  | block ;
 
-forStmt        -> "for" "(" ( varDeclaration | expression )? ";"
+block            -> "{" declaration* "}" ;
+
+forStmt          -> "for" "(" ( varDeclaration   | expression )? ";"
                   expression? ";"
                   expression? ")" statement ;
 
-whileStmt      -> "while" "(" expression ")" statement ;
+whileStmt        -> "while" "(" expression ")" statement ;
 
-ifStmt         -> "if" "(" expression ")" statement
+ifStmt           -> "if" "(" expression ")" statement
                   ( "else" statement )? ;
 
-exprStmt       -> expression ";" ;
+exprStmt         -> expression ";" ;
 
-printStmt      -> "print" expression ";" ;
+printStmt        -> "print" expression ";" ;
 
-returnStmt     -> "return" expression? ";" ;
+returnStmt       -> "return" expression? ";" ;
 
-expression     -> assignment ;
-assignment     -> IDENTIFIER "=" expression
-                | logical_or;
+expression       -> assignment ;
+assignment       -> ( call "." )? IDENTIFIER "=" expression
+                  | logical_or;
 
-logical_or     -> logical_and ( "or" logical_and )* ;
-logical_and    -> equality ( "and" equality )* ;
+logical_or       -> logical_and ( "or" logical_and )* ;
+logical_and      -> equality ( "and" equality )* ;
 
-equality       -> comparison ( ( "!=" | "==" ) comparison )* ;
-comparison     -> term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
-term           -> factor ( ( "-" | "+" ) factor )* ;
-factor         -> unary ( ( "/" | "*" ) unary )* ;
-unary          -> ( "!" | "-" ) unary
-                | call ;
-call           -> primary ( "(" arguments? ")" )* ;
-arguments      -> expression ( "," expression )* ;
-primary        -> NUMBER | STRING
-                | "true" | "false" | "nil"
-                | "(" expression ")"
-                | IDENTIFIER ;
+equality         -> comparison ( ( "!="   | "==" ) comparison )* ;
+comparison       -> term ( ( ">"   | ">="   | "<"   | "<=" ) term )* ;
+term             -> factor ( ( "-"   | "+" ) factor )* ;
+factor           -> unary ( ( "/"   | "*" ) unary )* ;
+unary            -> ( "!"   | "-" ) unary
+                  | call ;
+call             -> primary ( "(" arguments? ")" | "." IDENTIFIER )* ;
+arguments        -> expression ( "," expression )* ;
+primary          -> NUMBER   | STRING
+                  | "true"   | "false"   | "nil"
+                  | "(" expression ")"
+                  | IDENTIFIER ;

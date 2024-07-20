@@ -158,3 +158,22 @@ print "should print 1";
 counter(); // "1".
 print "should print 2";
 counter(); // "2".
+
+class Breakfast {
+  cook() {
+    print "Eggs a-fryin'!";
+  }
+
+  serve(who) {
+    print "Enjoy your breakfast, " + who + ".";
+  }
+}
+
+print Breakfast;
+
+class Bagel {}
+var bagel = Bagel();
+print bagel; // Prints "<instance of class Bagel>".
+
+bagel.size = "large";
+print bagel.size;

@@ -42,6 +42,15 @@ func (p *Parser) Parse() ([]ast.Stmt, []error) {
 }
 
 func (p *Parser) declaration() (ast.Stmt, error) {
+	if p.match(token.CLASS) {
+		class, err := p.classDeclaration()
+		if err != nil {
+			p.synchronize()
+			return nil, err
+		}
+
+		return class, nil
+	}
 	if p.match(token.FUN) {
 		fun, err := p.function("function")
 		if err != nil {
@@ -69,6 +78,35 @@ func (p *Parser) declaration() (ast.Stmt, error) {
 	}
 
 	return statement, nil
+}
+
+func (p *Parser) classDeclaration() (*ast.ClassStmt, error) {
+	name, err := p.consume(token.IDENTIFIER, "expected class name")
+	if err != nil {
+		return nil, err
+	}
+
+	if _, err := p.consume(token.LEFT_BRACE, "expected '{' after class name"); err != nil {
+		return nil, err
+	}
+
+	methods := []*ast.FunctionStmt{}
+	for !p.check(token.RIGHT_BRACE) && !p.isAtEnd() {
+		method, err := p.function("method")
+		if err != nil {
+			return nil, err
+		}
+		methods = append(methods, method)
+	}
+
+	if _, err := p.consume(token.RIGHT_BRACE, "expected '}' after class body"); err != nil {
+		return nil, err
+	}
+
+	return &ast.ClassStmt{
+		Name:    name,
+		Methods: methods,
+	}, nil
 }
 
 func (p *Parser) function(kind string) (*ast.FunctionStmt, error) {
@@ -401,15 +439,24 @@ func (p *Parser) assignment() (ast.Expr, error) {
 			return nil, err
 		}
 
-		varExpr, isVarExpr := expr.(*ast.VariableExpr)
-		if isVarExpr {
+		switch expr := expr.(type) {
+		case *ast.VariableExpr:
 			return &ast.AssignmentExpr{
-				Name:  varExpr.Name,
+				Name:  expr.Name,
 				Value: value,
 			}, nil
+
+		case *ast.GetExpr:
+			return &ast.SetExpr{
+				Object: expr.Object,
+				Name:   expr.Name,
+				Value:  value,
+			}, nil
+
+		default:
+			fmt.Fprintln(os.Stderr, p.error(equals, "invalid assignment target"))
 		}
 
-		fmt.Fprintln(os.Stderr, p.error(equals, "invalid assignment target"))
 	}
 
 	return expr, nil
@@ -583,6 +630,16 @@ func (p *Parser) call() (ast.Expr, error) {
 			expr, err = p.finishCall(expr)
 			if err != nil {
 				return nil, err
+			}
+		} else if p.match(token.DOT) {
+			name, err := p.consume(token.IDENTIFIER, "expected property name after '.'")
+			if err != nil {
+				return nil, err
+			}
+
+			expr = &ast.GetExpr{
+				Object: expr,
+				Name:   name,
 			}
 		} else {
 			break
