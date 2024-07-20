@@ -367,15 +367,16 @@ func (i *Interpreter) VisitClassStmt(stmt *ast.ClassStmt) (any, error) {
 	methods := map[string]*function{}
 	for _, method := range stmt.Methods {
 		fun := &function{
-			declaration: method,
-			closure:     i.env,
+			declaration:   method,
+			closure:       i.env,
+			isInitializer: method.Name.Lexeme == "init",
 		}
 		methods[method.Name.Lexeme] = fun
 	}
 
 	class := &class{
-		Name:    stmt.Name.Lexeme,
-		Methods: methods,
+		name:    stmt.Name.Lexeme,
+		methods: methods,
 	}
 
 	i.env.Assign(stmt.Name, class)
@@ -400,8 +401,9 @@ func (i *Interpreter) VisitVarStmt(stmt *ast.VarStmt) (any, error) {
 
 func (i *Interpreter) VisitFunctionStmt(stmt *ast.FunctionStmt) (any, error) {
 	fun := &function{
-		declaration: stmt,
-		closure:     i.env,
+		declaration:   stmt,
+		closure:       i.env,
+		isInitializer: false,
 	}
 	i.env.Define(stmt.Name.Lexeme, fun)
 	return nil, nil

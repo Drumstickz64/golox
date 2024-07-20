@@ -8,26 +8,36 @@ import (
 )
 
 type class struct {
-	Name    string
-	Methods map[string]*function
+	name    string
+	methods map[string]*function
 }
 
 func (c *class) Call(interpreter *Interpreter, arguments []any) (any, error) {
 	ins := NewInstance(c)
 
+	initializer, ok := c.findMethod("init")
+	if ok {
+		initializer.bind(ins).Call(interpreter, arguments)
+	}
+
 	return ins, nil
 }
 
 func (c *class) Arity() int {
-	return 0
+	initializer, ok := c.findMethod("init")
+	if !ok {
+		return 0
+	}
+
+	return initializer.Arity()
 }
 
 func (c *class) String() string {
-	return fmt.Sprintf("<class %s>", c.Name)
+	return fmt.Sprintf("<class %s>", c.name)
 }
 
 func (c *class) findMethod(name string) (*function, bool) {
-	method, ok := c.Methods[name]
+	method, ok := c.methods[name]
 	if ok {
 		return method, true
 	}
@@ -36,24 +46,24 @@ func (c *class) findMethod(name string) (*function, bool) {
 }
 
 type Instance struct {
-	Class  *class
-	Fields map[string]any
+	class  *class
+	fields map[string]any
 }
 
 func NewInstance(class *class) *Instance {
 	return &Instance{
-		Class:  class,
-		Fields: map[string]any{},
+		class:  class,
+		fields: map[string]any{},
 	}
 }
 
 func (i *Instance) Get(name token.Token) (any, error) {
-	value, ok := i.Fields[name.Lexeme]
+	value, ok := i.fields[name.Lexeme]
 	if ok {
 		return value, nil
 	}
 
-	method, ok := i.Class.findMethod(name.Lexeme)
+	method, ok := i.class.findMethod(name.Lexeme)
 	if ok {
 		return method.bind(i), nil
 	}
@@ -62,9 +72,9 @@ func (i *Instance) Get(name token.Token) (any, error) {
 }
 
 func (i *Instance) Set(name token.Token, value any) {
-	i.Fields[name.Lexeme] = value
+	i.fields[name.Lexeme] = value
 }
 
 func (i *Instance) String() string {
-	return fmt.Sprintf("<instance of class %s>", i.Class.Name)
+	return fmt.Sprintf("<instance of class %s>", i.class.name)
 }

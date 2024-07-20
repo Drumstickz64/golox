@@ -16,6 +16,7 @@ const (
 	FUNCTION_TYPE_NONE functionType = iota
 	FUNCTION_TYPE_FUNCTION
 	FUNCTION_TYPE_METHOD
+	FUNCTION_TYPE_INITIALIZER
 )
 
 type classType int
@@ -67,6 +68,10 @@ func (r *Resolver) VisitClassStmt(stmt *ast.ClassStmt) (any, error) {
 
 	for _, method := range stmt.Methods {
 		declaration := FUNCTION_TYPE_METHOD
+		if method.Name.Lexeme == "init" {
+			declaration = FUNCTION_TYPE_INITIALIZER
+		}
+
 		r.resolveFunction(method, declaration)
 	}
 
@@ -136,6 +141,10 @@ func (r *Resolver) VisitPrintStmt(stmt *ast.PrintStmt) (any, error) {
 func (r *Resolver) VisitReturnStmt(stmt *ast.ReturnStmt) (any, error) {
 	if r.currFunction == FUNCTION_TYPE_NONE {
 		r.reportError(stmt.Keyword, "can't return from top-level code")
+	}
+
+	if stmt.Value != nil && r.currFunction == FUNCTION_TYPE_INITIALIZER {
+		r.reportError(stmt.Keyword, "can't return a value from an initializer")
 	}
 
 	if stmt.Value != nil {
