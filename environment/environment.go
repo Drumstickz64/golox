@@ -27,6 +27,10 @@ func WithEnclosing(env *Environment) *Environment {
 	}
 }
 
+func (e *Environment) Enclosing() *Environment {
+	return e.enclosing
+}
+
 func (e *Environment) Get(name token.Token) (any, error) {
 	if value, ok := e.values[name.Lexeme]; ok {
 		return value, nil

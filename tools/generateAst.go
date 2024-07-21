@@ -29,6 +29,7 @@ func main() {
 		"Call       : Callee Expr, Paren token.Token, Arguments []Expr",
 		"Get        : Object Expr, Name token.Token",
 		"Set        : Object Expr, Name token.Token, Value Expr",
+		"Super      : Keyword token.Token, Method token.Token",
 		"This       : Keyword token.Token",
 		"Variable   : Name token.Token",
 		"Assignment : Name token.Token, Value Expr",

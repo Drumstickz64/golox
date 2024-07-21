@@ -237,12 +237,21 @@ print plr.strength;
 plr.cast("Fireball");
 
 class Doughnut {
-    cook() {
-      print "Fry until golden brown.";
-    }
+  cook() {
+    print "Fry until golden brown.";
+  }
+
+  invalidSuper() {
+    // super.doSomething(); // invalid
+  }
 }
 
-class BostonCream < Doughnut {}
+class BostonCream < Doughnut {
+  cook() {
+    super.cook();
+    print "Pipe full of custard and coat with chocolate.";
+  }
+}
 
 class ChocolateDoughnut < Doughnut {
   init(type) {
@@ -254,7 +263,8 @@ class ChocolateDoughnut < Doughnut {
   }
 
   cook() {
-    print "Fry until " + str(this.type) + " brown.";
+    super.cook();
+    print "Pour " + str(this.type) + " chocolate on top.";
   }
 }
 
@@ -270,3 +280,5 @@ choco.cook();
 
 //   class Subclass < NotAClass {} // ?!
 // }
+
+// super.doSomething(); // invalid

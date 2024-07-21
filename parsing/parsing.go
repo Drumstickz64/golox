@@ -700,6 +700,24 @@ func (p *Parser) primary() (ast.Expr, error) {
 		return &ast.LiteralExpr{Value: nil}, nil
 	}
 
+	if p.match(token.SUPER) {
+		keyword := p.previous()
+
+		if _, err := p.consume(token.DOT, "expected '.' after 'super'"); err != nil {
+			return nil, err
+		}
+
+		method, err := p.consume(token.IDENTIFIER, "expected superclass method name")
+		if err != nil {
+			return nil, err
+		}
+
+		return &ast.SuperExpr{
+			Keyword: keyword,
+			Method:  method,
+		}, nil
+	}
+
 	if p.match(token.THIS) {
 		return &ast.ThisExpr{Keyword: p.previous()}, nil
 	}

@@ -129,6 +129,18 @@ func (i *Interpreter) VisitSetExpr(expr *ast.SetExpr) (any, error) {
 	return value, nil
 }
 
+func (i *Interpreter) VisitSuperExpr(expr *ast.SuperExpr) (any, error) {
+	distance := i.locals[makeExprId(expr)]
+	superClass := i.env.GetAt(distance, "super").(*class)
+	object := i.env.GetAt(distance-1, "this").(*Instance) // env for 'this' is always one hop away from the env for 'super'
+	method, ok := superClass.findMethod(expr.Method.Lexeme)
+	if !ok {
+		return nil, errors.NewRuntimeError(expr.Method, fmt.Sprintf("undefined property '%s'", expr.Method.Lexeme))
+	}
+
+	return method.bind(object), nil
+}
+
 func (i *Interpreter) VisitThisExpr(expr *ast.ThisExpr) (any, error) {
 	return i.lookupVariable(expr.Keyword, expr)
 }
@@ -369,8 +381,6 @@ func (i *Interpreter) VisitBlockStmt(stmt *ast.BlockStmt) (any, error) {
 }
 
 func (i *Interpreter) VisitClassStmt(stmt *ast.ClassStmt) (any, error) {
-	i.env.Define(stmt.Name.Lexeme, nil)
-
 	var superClass *class = nil
 	if stmt.SuperClass != nil {
 		superClassValue, err := i.evaluate(stmt.SuperClass)
@@ -384,6 +394,13 @@ func (i *Interpreter) VisitClassStmt(stmt *ast.ClassStmt) (any, error) {
 		}
 
 		superClass = superClassInstance
+	}
+
+	i.env.Define(stmt.Name.Lexeme, nil)
+
+	if superClass != nil {
+		i.env = environment.WithEnclosing(i.env)
+		i.env.Define("super", superClass)
 	}
 
 	methods := map[string]*function{}
@@ -400,6 +417,10 @@ func (i *Interpreter) VisitClassStmt(stmt *ast.ClassStmt) (any, error) {
 		name:       stmt.Name.Lexeme,
 		superClass: superClass,
 		methods:    methods,
+	}
+
+	if superClass != nil {
+		i.env = i.env.Enclosing()
 	}
 
 	i.env.Assign(stmt.Name, class)

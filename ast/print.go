@@ -60,6 +60,10 @@ func (p Printer) VisitSetExpr(expr *SetExpr) (any, error) {
 	return fmt.Sprintf("(.= %s %s %s)", objectStr, expr.Name, valueStr), nil
 }
 
+func (p Printer) VisitSuperExpr(expr *SuperExpr) (any, error) {
+	return fmt.Sprintf(". (super) (%s)", expr.Method), nil
+}
+
 func (p Printer) VisitThisExpr(expr *ThisExpr) (any, error) {
 	return "(this)", nil
 }

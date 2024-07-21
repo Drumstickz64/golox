@@ -13,6 +13,7 @@ type ExprVisitor interface {
 	VisitCallExpr(*CallExpr) (any, error)
 	VisitGetExpr(*GetExpr) (any, error)
 	VisitSetExpr(*SetExpr) (any, error)
+	VisitSuperExpr(*SuperExpr) (any, error)
 	VisitThisExpr(*ThisExpr) (any, error)
 	VisitVariableExpr(*VariableExpr) (any, error)
 	VisitAssignmentExpr(*AssignmentExpr) (any, error)
@@ -94,6 +95,15 @@ type SetExpr struct {
 
 func (s *SetExpr) Accept(visitor ExprVisitor) (any, error) {
 	return visitor.VisitSetExpr(s)
+}
+
+type SuperExpr struct {
+	Keyword token.Token
+	Method  token.Token
+}
+
+func (s *SuperExpr) Accept(visitor ExprVisitor) (any, error) {
+	return visitor.VisitSuperExpr(s)
 }
 
 type ThisExpr struct {

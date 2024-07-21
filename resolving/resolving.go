@@ -24,6 +24,7 @@ type classType int
 const (
 	CLASS_TYPE_NONE classType = iota
 	CLASS_TYPE_CLASS
+	CLASS_TYPE_SUBCLASS
 )
 
 type Resolver struct {
@@ -67,7 +68,12 @@ func (r *Resolver) VisitClassStmt(stmt *ast.ClassStmt) (any, error) {
 			r.reportError(stmt.SuperClass.Name, "a class can't inherit from itself")
 		}
 
+		r.currClass = CLASS_TYPE_SUBCLASS
 		r.resolveExpr(stmt.SuperClass)
+
+		r.beginScope()
+		r.scopes[len(r.scopes)-1]["super"] = true
+		defer r.endScope()
 	}
 
 	r.beginScope()
@@ -193,6 +199,18 @@ func (r *Resolver) VisitGetExpr(expr *ast.GetExpr) (any, error) {
 func (r *Resolver) VisitSetExpr(expr *ast.SetExpr) (any, error) {
 	r.resolveExpr(expr.Value)
 	r.resolveExpr(expr.Object)
+	return nil, nil
+}
+
+func (r *Resolver) VisitSuperExpr(expr *ast.SuperExpr) (any, error) {
+	switch r.currClass {
+	case CLASS_TYPE_NONE:
+		r.reportError(expr.Keyword, "can't use 'super' outside of a class")
+	case CLASS_TYPE_CLASS:
+		r.reportError(expr.Keyword, "can't use 'super' in a class with no superclass")
+	}
+
+	r.resolveLocal(expr, expr.Keyword)
 	return nil, nil
 }
 
