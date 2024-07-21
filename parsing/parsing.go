@@ -86,6 +86,15 @@ func (p *Parser) classDeclaration() (*ast.ClassStmt, error) {
 		return nil, err
 	}
 
+	var superClass *ast.VariableExpr = nil
+	if p.match(token.LESS) {
+		superClassName, err := p.consume(token.IDENTIFIER, "expected superclass name")
+		if err != nil {
+			return nil, err
+		}
+		superClass = &ast.VariableExpr{Name: superClassName}
+	}
+
 	if _, err := p.consume(token.LEFT_BRACE, "expected '{' after class name"); err != nil {
 		return nil, err
 	}
@@ -104,8 +113,9 @@ func (p *Parser) classDeclaration() (*ast.ClassStmt, error) {
 	}
 
 	return &ast.ClassStmt{
-		Name:    name,
-		Methods: methods,
+		Name:       name,
+		SuperClass: superClass,
+		Methods:    methods,
 	}, nil
 }
 

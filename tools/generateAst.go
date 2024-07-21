@@ -42,7 +42,7 @@ func main() {
 
 	err = defineAst(outputDir, "Stmt", []string{
 		"Block      : Statements []Stmt",
-		"Class      : Name token.Token, Methods []*FunctionStmt",
+		"Class      : Name token.Token, SuperClass *VariableExpr, Methods []*FunctionStmt",
 		"Expression : Expression Expr",
 		"While      : Condition Expr, Body Stmt",
 		"If         : Condition Expr, ThenBranch Stmt, ElseBranch Stmt",

@@ -29,8 +29,9 @@ func (b *BlockStmt) Accept(visitor StmtVisitor) (any, error) {
 }
 
 type ClassStmt struct {
-	Name    token.Token
-	Methods []*FunctionStmt
+	Name       token.Token
+	SuperClass *VariableExpr
+	Methods    []*FunctionStmt
 }
 
 func (c *ClassStmt) Accept(visitor StmtVisitor) (any, error) {

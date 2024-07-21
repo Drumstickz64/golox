@@ -371,6 +371,21 @@ func (i *Interpreter) VisitBlockStmt(stmt *ast.BlockStmt) (any, error) {
 func (i *Interpreter) VisitClassStmt(stmt *ast.ClassStmt) (any, error) {
 	i.env.Define(stmt.Name.Lexeme, nil)
 
+	var superClass *class = nil
+	if stmt.SuperClass != nil {
+		superClassValue, err := i.evaluate(stmt.SuperClass)
+		if err != nil {
+			return nil, err
+		}
+
+		superClassInstance, ok := superClassValue.(*class)
+		if !ok {
+			return nil, errors.NewRuntimeError(stmt.SuperClass.Name, "superclass must be a class")
+		}
+
+		superClass = superClassInstance
+	}
+
 	methods := map[string]*function{}
 	for _, method := range stmt.Methods {
 		fun := &function{
@@ -382,8 +397,9 @@ func (i *Interpreter) VisitClassStmt(stmt *ast.ClassStmt) (any, error) {
 	}
 
 	class := &class{
-		name:    stmt.Name.Lexeme,
-		methods: methods,
+		name:       stmt.Name.Lexeme,
+		superClass: superClass,
+		methods:    methods,
 	}
 
 	i.env.Assign(stmt.Name, class)

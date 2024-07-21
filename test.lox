@@ -235,3 +235,19 @@ var plr = Player(20);
 print plr.health;
 print plr.strength;
 plr.cast("Fireball");
+
+class Doughnut {
+  // General doughnut stuff...
+}
+
+class BostonCream < Doughnut {
+  // Boston Cream-specific stuff...
+}
+
+// class Oops < Oops {} // invalid
+
+// {
+//   var NotAClass = "I am totally not a class";
+
+//   class Subclass < NotAClass {} // ?!
+// }

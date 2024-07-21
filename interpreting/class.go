@@ -8,8 +8,9 @@ import (
 )
 
 type class struct {
-	name    string
-	methods map[string]*function
+	name       string
+	superClass *class
+	methods    map[string]*function
 }
 
 func (c *class) Call(interpreter *Interpreter, arguments []any) (any, error) {

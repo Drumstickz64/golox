@@ -5,7 +5,7 @@ declaration      -> classDeclaration
                   | varDeclaration
                   | statement ;
 
-classDeclaration -> "class" IDENTIFIER "{ *function "}" ;
+classDeclaration -> "class" IDENTIFIER ( < IDENTIFIER )? "{ *function "}" ;
 
 funDeclaration   -> "fun" function ;
 function         -> IDENTIFIER "(" parameters? ")" block ;
