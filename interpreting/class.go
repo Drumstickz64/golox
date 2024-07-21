@@ -43,6 +43,10 @@ func (c *class) findMethod(name string) (*function, bool) {
 		return method, true
 	}
 
+	if c.superClass != nil {
+		return c.superClass.findMethod(name)
+	}
+
 	return nil, false
 }
 
