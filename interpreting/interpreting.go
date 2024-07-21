@@ -34,6 +34,13 @@ func NewInterpreter() *Interpreter {
 		},
 	})
 
+	globals.Define("str", &nativeFunction{
+		arity: 1,
+		call: func(interpreter *Interpreter, arguments []any) (any, error) {
+			return stringify(arguments[0]), nil
+		},
+	})
+
 	return &Interpreter{
 		globals: globals,
 		env:     globals,

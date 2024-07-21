@@ -3,6 +3,7 @@ package interpreting
 import (
 	"fmt"
 
+	"github.com/Drumstickz64/golox/assert"
 	"github.com/Drumstickz64/golox/ast"
 	"github.com/Drumstickz64/golox/environment"
 )
@@ -23,6 +24,8 @@ func (f *function) Arity() int {
 }
 
 func (f *function) Call(interpreter *Interpreter, arguments []any) (any, error) {
+	assert.Eq(len(arguments), f.Arity())
+
 	defer func() { interpreter.isReturning = false }()
 
 	env := environment.WithEnclosing(f.closure)
@@ -64,6 +67,7 @@ func (f *nativeFunction) Arity() int {
 }
 
 func (f *nativeFunction) Call(interpreter *Interpreter, arguments []any) (any, error) {
+	assert.Eq(len(arguments), f.Arity())
 	return f.call(interpreter, arguments)
 }
 
