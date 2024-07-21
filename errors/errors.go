@@ -18,7 +18,7 @@ func LogUsageMessage() {
 }
 
 func NewBuildtimeError(line, column int, where string, msg any) error {
-	return fmt.Errorf("[line %d] Error%v: %v", line, where, msg)
+	return fmt.Errorf("[line %d:%d] Error%v: %v", line, column, where, msg)
 }
 
 func NewRuntimeError(tok token.Token, msg any) error {
